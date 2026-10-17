@@ -3,30 +3,33 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LogiTrack · Control Ejecutivo de OT</title>
+<title>Control Ejecutivo de OT</title>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
-<style>html,body{margin:0;padding:0}body{overscroll-behavior:none}::-webkit-scrollbar{display:none}.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400}</style>
+<style>html,body{margin:0;padding:0}body{overscroll-behavior:none}::-webkit-scrollbar{display:none}.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400}.dual{position:relative;height:28px}
+.dual input[type=range]{position:absolute;left:0;top:0;width:100%;height:28px;margin:0;background:none;pointer-events:none;-webkit-appearance:none;appearance:none}
+.dual input[type=range]::-webkit-slider-runnable-track{background:transparent;height:28px}
+.dual input[type=range]::-moz-range-track{background:transparent}
+.dual input[type=range]::-webkit-slider-thumb{pointer-events:auto;-webkit-appearance:none;width:20px;height:20px;margin-top:4px;border-radius:50%;background:#1d4ed8;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:grab}
+.dual input[type=range]::-moz-range-thumb{pointer-events:auto;width:14px;height:14px;border-radius:50%;background:#1d4ed8;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:grab}
+</style>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"on-tertiary":"#ffffff","surface-container-low":"#eff4ff","outline-variant":"#c4c5d7","outline":"#747686","surface-container-highest":"#d3e4fe","tertiary-container":"#006948","secondary-container":"#dae2fd","on-secondary":"#ffffff","primary":"#0037b0","tertiary":"#004f35","error":"#ba1a1a","surface-container-lowest":"#ffffff","surface-container-high":"#dce9ff","surface":"#f8f9ff","on-primary":"#ffffff","tertiary-fixed":"#85f8c4","primary-fixed":"#dce1ff","primary-container":"#1d4ed8","on-surface":"#0b1c30","on-primary-fixed":"#001551","secondary-fixed":"#dae2fd","on-secondary-fixed":"#131b2e","on-surface-variant":"#434655","background":"#f8f9ff","surface-container":"#e5eeff","secondary":"#565e74"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"gutter-lg":"1.5rem","margin-sm":"1rem","space-md":"0.75rem","space-xl":"1.5rem","gutter":"1rem","margin-lg":"2rem","space-xs":"0.25rem","margin":"1.5rem","space-sm":"0.5rem","space-lg":"1rem"},"fontFamily":{"label-md":["Inter"],"body-md":["Inter"],"body-sm":["Inter"],"label-sm":["Inter"],"label-lg":["Inter"],"headline-xl":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"]},"fontSize":{"label-md":["11px",{"lineHeight":"16px","letterSpacing":"0.025em","fontWeight":"600"}],"body-md":["13px",{"lineHeight":"18px","fontWeight":"400"}],"label-sm":["10px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"700"}],"label-lg":["13px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"600"}],"headline-xl":["30px",{"lineHeight":"38px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-md":["18px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}]}}}}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
-<body class="bg-background font-body-md text-on-surface antialiased">
+<body class="bg-background font-body-md text-body-md text-on-surface antialiased">
 
 <!-- SIDEBAR -->
 <aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between py-margin-sm">
   <div class="flex flex-col gap-space-lg">
-    <div class="px-space-lg flex items-center gap-space-sm">
-      <span class="material-symbols-outlined text-primary text-[32px]">local_shipping</span>
-      <div class="flex flex-col"><span class="font-headline-md text-headline-md text-primary">LogiTrack</span><span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Executive WMS</span></div>
-    </div>
-    <nav class="flex flex-col gap-space-xs px-space-md">
-      <a class="flex items-center gap-space-sm px-space-md py-space-sm bg-primary-container text-on-primary font-label-lg rounded-xl shadow-sm" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span><span>Tablero de Control</span></a>
+    <nav class="flex flex-col gap-space-xs px-space-md pt-space-lg">
+      <a class="flex items-center gap-space-sm px-space-md py-space-sm bg-primary-container text-on-primary font-label-lg text-label-lg rounded-xl shadow-sm" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span><span>Tablero de Control</span></a>
       <a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high" href="#detalle"><span class="material-symbols-outlined text-[20px]">inventory_2</span><span>Detalle por Lote y Ubicación</span></a>
-      <a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high" href="#analisis"><span class="material-symbols-outlined text-[20px]">query_stats</span><span>Análisis por OT</span></a>
+      <a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high" href="#historico"><span class="material-symbols-outlined text-[20px]">history</span><span>Histórico OT</span></a>
     </nav>
   </div>
   <div class="px-space-md">
-    <div class="bg-surface-container-lowest rounded-xl p-space-sm shadow-sm font-label-sm text-on-surface-variant">
+    <div class="bg-surface-container-lowest rounded-xl p-space-sm shadow-sm font-label-sm text-label-sm text-on-surface-variant">
       <div class="flex justify-between"><span>Fuente de datos</span><span class="text-tertiary font-bold" id="side-status">…</span></div>
       <div class="mt-1">Google Sheets (CSV)</div>
     </div>
@@ -37,13 +40,13 @@
   <!-- TOPBAR -->
   <header class="fixed top-0 left-64 right-0 h-16 bg-surface/90 backdrop-blur-xl shadow-sm z-40 flex items-center justify-between px-gutter-lg gap-space-md">
     <div class="flex items-center gap-space-lg flex-1">
-      <div class="flex items-center gap-space-xs font-label-md text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">domain</span>Logística<span class="material-symbols-outlined text-[14px]">chevron_right</span><span class="text-primary font-bold">Centro de Operaciones</span></div>
+      <div class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">domain</span>Logística<span class="material-symbols-outlined text-[14px]">chevron_right</span><span class="text-primary font-bold">Centro de Operaciones</span></div>
       <div class="relative max-w-md w-full">
         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
         <input id="global-search" class="w-full pl-9 pr-4 py-1.5 bg-surface-container-low rounded-xl text-body-md focus:outline-none focus:bg-surface-container-lowest" placeholder="Buscar OT, SKU, lote o ubicación..." type="text">
       </div>
     </div>
-    <div class="hidden xl:flex items-center gap-space-sm bg-surface-container-low px-space-sm py-1 rounded-xl font-label-sm">
+    <div class="hidden xl:flex items-center gap-space-sm bg-surface-container-low px-space-sm py-1 rounded-xl font-label-sm text-label-sm">
       <span class="material-symbols-outlined text-[16px] text-secondary">calendar_today</span>
       <span id="top-date">—</span><span class="text-outline-variant">|</span><span class="text-tertiary font-bold" id="top-ots">0 OTs</span>
     </div>
@@ -55,30 +58,30 @@
       <!-- Encabezado -->
       <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
         <div class="flex flex-col gap-space-xs">
-          <span class="inline-flex w-fit items-center px-space-xs py-0.5 rounded bg-primary text-on-primary font-label-sm uppercase tracking-wider">Mando Operativo WMS</span>
+          <span class="inline-flex w-fit items-center px-space-xs py-0.5 rounded bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-wider">Mando Operativo WMS</span>
           <h1 class="font-headline-xl text-headline-xl tracking-tight">Control Ejecutivo de Órdenes de Trabajo (OT)</h1>
-          <p class="font-body-md text-on-surface-variant max-w-2xl">Monitoreo de picking y despacho alimentado en vivo desde Google Sheets.</p>
+          <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">Monitoreo de picking y despacho alimentado en vivo desde Google Sheets.</p>
         </div>
         <div class="flex flex-wrap items-center gap-space-sm">
-          <div class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container-low text-on-surface-variant font-label-md">
+          <div class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container-low text-on-surface-variant font-label-md text-label-md">
             <span class="w-2 h-2 rounded-full bg-tertiary-container animate-pulse" id="sync-dot"></span><span id="sync-text">Cargando…</span>
           </div>
-          <button id="btn-refresh" class="flex items-center gap-space-xs px-space-md py-2 rounded bg-surface-container hover:bg-surface-container-high font-label-lg shadow-sm"><span class="material-symbols-outlined text-[16px]">sync</span>Actualizar Datos</button>
-          <button id="btn-csv" class="flex items-center gap-space-xs px-space-md py-2 rounded bg-primary-container text-on-primary hover:bg-primary font-label-lg shadow-sm"><span class="material-symbols-outlined text-[16px]">download</span>Exportar CSV</button>
+          <button id="btn-refresh" class="flex items-center gap-space-xs px-space-md py-2 rounded bg-surface-container hover:bg-surface-container-high font-label-lg text-label-lg shadow-sm"><span class="material-symbols-outlined text-[16px]">sync</span>Actualizar Datos</button>
+          <button id="btn-xls" class="flex items-center gap-space-xs px-space-md py-2 rounded bg-primary-container text-on-primary hover:bg-primary font-label-lg text-label-lg shadow-sm"><span class="material-symbols-outlined text-[16px]">download</span>Exportar Excel (.xls)</button>
         </div>
       </div>
 
-      <div id="error-box" class="hidden bg-error-container bg-red-100 text-error p-space-md rounded-xl font-body-md"></div>
+      <div id="error-box" class="hidden bg-error-container bg-red-100 text-error p-space-md rounded-xl font-body-md text-body-md"></div>
 
       <!-- Filtros -->
       <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-space-md">
         <div class="flex flex-wrap items-center gap-space-sm">
-          <div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm uppercase"><span class="material-symbols-outlined text-[18px]">filter_alt</span>Filtros:</div>
-          <select id="filter-ot" class="bg-surface-container-low pl-3 pr-3 py-1.5 rounded font-label-md focus:outline-none cursor-pointer"></select>
-          <select id="filter-date" class="bg-surface-container-low pl-3 pr-3 py-1.5 rounded font-label-md focus:outline-none cursor-pointer"></select>
+          <div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm uppercase"><span class="material-symbols-outlined text-[18px]">filter_alt</span>Filtros:</div>
+          <select id="filter-ot" class="bg-surface-container-low pl-3 pr-3 py-1.5 rounded font-label-md text-label-md focus:outline-none cursor-pointer"></select>
+          <select id="filter-date" class="bg-surface-container-low pl-3 pr-3 py-1.5 rounded font-label-md text-label-md focus:outline-none cursor-pointer"></select>
           <div id="wh-buttons" class="flex items-center bg-surface-container-low p-0.5 rounded"></div>
         </div>
-        <div class="font-label-sm text-on-surface-variant flex items-center gap-space-sm"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span><span id="filter-summary"></span></div>
+        <div class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-space-sm"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span><span id="filter-summary"></span></div>
       </div>
 
       <!-- KPIs -->
@@ -87,19 +90,61 @@
       <!-- Desglose por OT -->
       <div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col gap-space-md" id="analisis">
         <div>
-          <h2 class="font-headline-md flex items-center gap-space-xs"><span class="material-symbols-outlined text-primary text-[22px]">assignment</span>Desglose por Orden de Trabajo</h2>
-          <p class="font-body-sm text-on-surface-variant">Unidades recolectadas, SKUs y lotes por OT. Si configuras metas en <code>TARGETS</code> se muestra el % de avance.</p>
+          <h2 class="font-headline-md text-headline-md flex items-center gap-space-xs"><span class="material-symbols-outlined text-primary text-[22px]">assignment</span>Desglose por Orden de Trabajo</h2>
+          <p class="font-body-sm text-body-sm text-on-surface-variant">Cruce de lo solicitado (TRANS QUANTITY) contra lo pendiente (SALDO) por orden.</p>
         </div>
         <div class="overflow-x-auto rounded-xl border border-surface-container">
           <table class="w-full text-left border-collapse">
-            <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm uppercase tracking-wider">
+            <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
               <th class="py-space-sm px-space-md">Orden (OT)</th><th class="py-space-sm px-space-md">Almacén</th>
-              <th class="py-space-sm px-space-md text-right">SKUs</th><th class="py-space-sm px-space-md text-right">Lotes</th>
-              <th class="py-space-sm px-space-md text-right">Transacciones</th>
-              <th class="py-space-sm px-space-md min-w-[240px]">Unidades Recolectadas</th>
-              <th class="py-space-sm px-space-md">Última fecha</th>
+              <th class="py-space-sm px-space-md text-right">SKUs</th><th class="py-space-sm px-space-md text-right">Líneas completas</th>
+              <th class="py-space-sm px-space-md text-right">Solicitado</th><th class="py-space-sm px-space-md text-right">Recolectado</th>
+              <th class="py-space-sm px-space-md text-right">Pendiente</th>
+              <th class="py-space-sm px-space-md min-w-[200px]">Avance</th>
             </tr></thead>
-            <tbody id="ot-body" class="divide-y divide-surface-container font-body-sm bg-surface-container-lowest"></tbody>
+            <tbody id="ot-body" class="divide-y divide-surface-container font-body-sm text-body-sm bg-surface-container-lowest"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Histórico OT -->
+      <div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col gap-space-md" id="historico">
+        <div class="flex flex-col md:flex-row md:items-start justify-between gap-space-md">
+          <div>
+            <h2 class="font-headline-md text-headline-md flex items-center gap-space-xs"><span class="material-symbols-outlined text-primary text-[22px]">history</span>Histórico de OT</h2>
+            <p class="font-body-sm text-body-sm text-on-surface-variant max-w-2xl">Unidades trabajadas por fecha según <strong>FECHA MOV</strong>. Mueve el slider para elegir el rango; cada OT muestra su fecha inicial y final de movimiento.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-space-sm">
+            <button id="hist-all" class="px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md">Todo el período</button>
+            <button id="hist-xls" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">file_download</span>Excel (.xls)</button>
+          </div>
+        </div>
+        <div id="hist-warn" class="hidden p-space-sm rounded bg-error-container bg-red-100 text-error font-body-sm text-body-sm"></div>
+        <div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-sm">
+          <div class="flex flex-wrap items-center justify-between gap-space-sm font-label-md text-label-md">
+            <span class="text-on-surface-variant uppercase font-label-sm text-label-sm">Unidades trabajadas por día</span>
+            <span id="hist-range-lbl" class="font-bold text-primary"></span>
+            <span id="hist-total-lbl" class="text-on-surface-variant"></span>
+          </div>
+          <div id="hist-chart" class="flex items-end gap-[2px] h-24 border-b border-outline-variant"></div>
+          <div class="dual" id="hist-slider">
+            <div class="absolute left-0 right-0 top-[12px] h-1 rounded bg-surface-container-highest"></div>
+            <div id="hist-fill" class="absolute top-[12px] h-1 rounded bg-primary-container"></div>
+            <input type="range" id="hist-from" min="0" max="0" value="0" step="1">
+            <input type="range" id="hist-to" min="0" max="0" value="0" step="1">
+          </div>
+          <div class="flex justify-between font-label-sm text-label-sm text-on-surface-variant"><span id="hist-min-lbl">—</span><span id="hist-max-lbl">—</span></div>
+        </div>
+        <div class="overflow-x-auto rounded-xl border border-surface-container">
+          <table class="w-full text-left border-collapse">
+            <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+              <th class="py-space-sm px-space-md">Orden de Trabajo (OT)</th><th class="py-space-sm px-space-md">Almacén</th>
+              <th class="py-space-sm px-space-md min-w-[200px]">Códigos trabajados / totales</th>
+              <th class="py-space-sm px-space-md min-w-[240px]">Unidades trabajadas / solicitadas</th>
+              <th class="py-space-sm px-space-md text-center">Estado</th>
+              <th class="py-space-sm px-space-md text-right">Fecha inicial</th><th class="py-space-sm px-space-md text-right">Fecha final</th>
+            </tr></thead>
+            <tbody id="hist-body" class="divide-y divide-surface-container font-body-sm text-body-sm bg-surface-container-lowest"></tbody>
           </table>
         </div>
       </div>
@@ -108,27 +153,34 @@
       <div class="bg-surface-container-lowest rounded-xl shadow-sm flex flex-col overflow-hidden" id="detalle">
         <div class="p-space-lg flex flex-col md:flex-row md:items-center justify-between gap-space-md">
           <div>
-            <h3 class="font-headline-md flex items-center gap-space-xs">Detalle Operativo por Ítem, Lote y Ubicación
-              <span class="px-2 py-0.5 rounded-full bg-surface-container text-primary font-label-sm font-bold" id="row-count">0</span></h3>
-            <p class="font-body-sm text-on-surface-variant">Traza física por SKU, lote y ubicación WMS.</p>
+            <h3 class="font-headline-md text-headline-md flex items-center gap-space-xs">Detalle Operativo por Ítem, Lote y Ubicación
+              <span class="px-2 py-0.5 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-bold" id="row-count">0</span></h3>
+            <p class="font-body-sm text-body-sm text-on-surface-variant">Traza física por SKU, lote y ubicación WMS.</p>
           </div>
-          <div class="relative">
-            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">search</span>
-            <input id="table-search" class="pl-8 pr-3 py-1.5 bg-surface-container-low rounded text-body-md focus:outline-none w-64" placeholder="Filtrar por SKU, lote o ubicación..." type="text">
+          <div class="flex flex-wrap items-center gap-space-sm">
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">search</span>
+              <input id="table-search" class="pl-8 pr-3 py-1.5 bg-surface-container-low rounded text-body-md focus:outline-none w-64" placeholder="Filtrar por SKU, lote o ubicación..." type="text">
+            </div>
+            <button id="btn-xls2" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">file_download</span><span id="xls-label">Excel (.xls)</span></button>
           </div>
         </div>
         <div class="w-full overflow-x-auto">
           <table class="w-full text-left border-collapse">
-            <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm uppercase tracking-wider">
-              <th class="py-space-sm px-space-md">ID</th><th class="py-space-sm px-space-md">Orden</th><th class="py-space-sm px-space-md">EAN-13</th>
+            <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+              <th class="py-space-sm px-space-md w-10"><input type="checkbox" id="sel-all" class="w-4 h-4 cursor-pointer accent-[#1d4ed8]" title="Seleccionar todo lo filtrado"></th>
+              <th class="py-space-sm px-space-md">Orden</th><th class="py-space-sm px-space-md">EAN-13</th>
               <th class="py-space-sm px-space-md min-w-[260px]">Descripción</th><th class="py-space-sm px-space-md">Lote</th>
               <th class="py-space-sm px-space-md">Vencimiento</th><th class="py-space-sm px-space-md">Ubicación</th>
-              <th class="py-space-sm px-space-md text-center">WH</th><th class="py-space-sm px-space-md text-right">Cantidad</th><th class="py-space-sm px-space-md">Fecha</th>
+              <th class="py-space-sm px-space-md text-center">WH</th>
+              <th class="py-space-sm px-space-md text-right">Solicitado</th><th class="py-space-sm px-space-md text-right">Pendiente</th>
+              <th class="py-space-sm px-space-md min-w-[130px]">Avance</th><th class="py-space-sm px-space-md text-center">Estado</th>
+              <th class="py-space-sm px-space-md">Fecha</th>
             </tr></thead>
-            <tbody id="detail-body" class="divide-y divide-surface-container font-body-sm"></tbody>
+            <tbody id="detail-body" class="divide-y divide-surface-container font-body-sm text-body-sm"></tbody>
           </table>
         </div>
-        <div class="p-space-md bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm text-on-surface-variant font-label-sm">
+        <div class="p-space-md bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm text-on-surface-variant font-label-sm text-label-sm">
           <span id="page-info"></span>
           <div class="flex items-center gap-1">
             <button id="prev" class="px-2 py-0.5 rounded bg-surface-container-lowest hover:bg-surface-container disabled:opacity-40">‹ Anterior</button>
@@ -141,13 +193,13 @@
       <!-- Gráficos -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
         <div class="lg:col-span-7 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
-          <span class="font-label-sm text-secondary uppercase tracking-wider">Análisis comparativo</span>
-          <h3 class="font-headline-md mb-space-md">Unidades recolectadas por OT</h3>
+          <span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Análisis comparativo</span>
+          <h3 class="font-headline-md text-headline-md mb-space-md">Unidades recolectadas por OT</h3>
           <div id="chart-ot" class="flex flex-col gap-space-md"></div>
         </div>
         <div class="lg:col-span-5 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
-          <span class="font-label-sm text-secondary uppercase tracking-wider">Capacidad</span>
-          <h3 class="font-headline-md mb-space-md">Distribución por Almacén</h3>
+          <span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Capacidad</span>
+          <h3 class="font-headline-md text-headline-md mb-space-md">Distribución por Almacén</h3>
           <div id="chart-wh" class="flex flex-col gap-space-sm"></div>
         </div>
       </div>
@@ -159,24 +211,27 @@
 <script>
 /* ============ CONFIGURACIÓN ============ */
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTWZmOGgm12KMMC7h3WNApewPJ5s83--mMAV-7K9-J3Jm2vV7TiP5j5fYuf21L7iSS6iHfiLAmL2a2G/pub?gid=829291771&single=true&output=csv";
-const REFRESH_MS = 5 * 60 * 1000;   // auto-actualizar cada 5 min
+const REFRESH_MS = 5 * 60 * 1000;
 const PAGE_SIZE  = 25;
-// Metas opcionales (unidades solicitadas por OT) para mostrar % de avance. Ej: { OT033: 5000, OT030: 7530 }
-const TARGETS = {};
 
-/* Nombres de columna (sin espacios/símbolos, mayúsculas). Se buscan exacto y luego "empieza con". */
+/* Encabezados (se comparan sin tildes, espacios ni símbolos, en mayúsculas) */
 const COLS = {
-  id:['IDDETAL'], ot:['ORDER'], cliente:['CUSTOMERNAME'], fecha:['TRANSACTIONDATE'],
+  ot:['ORDER'], cliente:['CUSTOMERNAME'], fecha:['TRANSACTIONDATE'],
   item:['ITEMNUMBER'], desc:['ITEMDESCRIPTION'], ean:['CODIGOEAN13','EAN13'], wh:['WH'],
-  lote:['LOTNUMBER'], venc:['LOTEXPIRATIONDATE'], loc:['LOCTN'], qty:['TRANSQUANTITY','TRANSQTY']
+  lote:['LOTNUMBER'], venc:['LOTEXPIRATIONDATE'], loc:['LOCTN'],
+  qty:['TRANSQUANTITY','TRANSQTY'],      // SOLICITADO
+  saldo:['SALDO'],                       // PENDIENTE
+  fm:['FECHAMOV','FECHAM']               // FECHA MOV (histórico)
 };
 
 /* ============ UTILIDADES ============ */
 const $ = id => document.getElementById(id);
 const fmt = n => Number(n).toLocaleString('es-PE');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const norm = s => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const norm = s => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const num = v => parseFloat(String(v||'').replace(/,/g,''))||0;
 const fmtDate = v => { v=String(v||'').trim(); if(/^\d{8}$/.test(v)) return `${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6)}`; return v; };
+const pct = (a,b) => b>0 ? Math.max(0,Math.min(100,a/b*100)) : 0;
 
 function parseCSV(text){
   const rows=[]; let row=[], f='', q=false;
@@ -197,9 +252,19 @@ function findCol(headers, cands){
   for(const c of cands){ const i=H.findIndex(h=>h.startsWith(c)); if(i>-1) return i; }
   return -1;
 }
+function parseFM(v){
+  v=String(v||'').trim(); if(!v) return null;
+  let y,mo,da,h=0,mi=0,se=0, m;
+  if((m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/))){ da=+m[1];mo=+m[2];y=+m[3];h=+(m[4]||0);mi=+(m[5]||0);se=+(m[6]||0); }
+  else if((m=v.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/))){ y=+m[1];mo=+m[2];da=+m[3];h=+(m[4]||0);mi=+(m[5]||0);se=+(m[6]||0); }
+  else return null;
+  const p=n=>String(n).padStart(2,'0');
+  return { ts:new Date(y,mo-1,da,h,mi,se).getTime(), day:`${y}-${p(mo)}-${p(da)}`, txt:`${y}-${p(mo)}-${p(da)} ${p(h)}:${p(mi)}` };
+}
+const estado = d => d.pend<=0 ? 'Completado' : (d.pend>=d.qty ? 'Pendiente' : 'En proceso');
 
 /* ============ ESTADO ============ */
-let DATA=[], state={ot:'ALL', date:'ALL', wh:'ALL', q:'', page:1}, lastSync=null;
+let DATA=[], state={ot:'ALL', date:'ALL', wh:'ALL', q:'', page:1}, lastSync=null, selected=new Set();
 
 async function load(){
   $('sync-text').textContent='Actualizando…';
@@ -210,17 +275,18 @@ async function load(){
     const rows = parseCSV(await res.text());
     const headers = rows[0];
     const idx = {}; for(const k in COLS) idx[k]=findCol(headers, COLS[k]);
-    const missing = Object.keys(idx).filter(k=>idx[k]<0 && ['ot','qty'].includes(k));
-    if(missing.length) throw new Error('No encontré las columnas: '+missing.join(', ')+'. Revisa los encabezados del sheet.');
+    const missing = Object.keys(idx).filter(k=>idx[k]<0 && ['ot','qty','saldo','ean'].includes(k));
+    if(missing.length) throw new Error('No encontré las columnas de: '+missing.join(', ')+'. Revisa los encabezados del sheet.');
     DATA = rows.slice(1).map(r=>{
       const g=k=> idx[k]>-1 ? (r[idx[k]]||'').trim() : '';
-      return { id:g('id'), ot:g('ot'), cliente:g('cliente'), fecha:fmtDate(g('fecha')), item:g('item'),
+      return { ot:g('ot'), cliente:g('cliente'), fecha:fmtDate(g('fecha')), item:g('item'),
         desc:g('desc'), ean:g('ean'), wh:g('wh'), lote:g('lote'), venc:fmtDate(g('venc')), loc:g('loc'),
-        qty: parseFloat(g('qty').replace(/,/g,''))||0 };
+        qty:num(g('qty')), pend:num(g('saldo')), fm:parseFM(g('fm')) };
     }).filter(d=>d.ot);
-    lastSync=new Date();
+    DATA.forEach((d,i)=>d.k=i);
+    selected.clear(); lastSync=new Date();
     $('side-status').textContent='En línea'; $('sync-dot').className='w-2 h-2 rounded-full bg-tertiary-container animate-pulse';
-    buildFilters(); render();
+    buildFilters(); render(); buildHist();
   }catch(e){
     $('error-box').textContent='⚠️ No se pudo leer el Google Sheet: '+e.message+' (verifica que esté publicado en la web como CSV).';
     $('error-box').classList.remove('hidden');
@@ -237,93 +303,194 @@ function buildFilters(){
   $('filter-date').innerHTML=`<option value="ALL">Todas las fechas</option>`+dates.map(o=>`<option>${esc(o)}</option>`).join('');
   $('filter-ot').value=ots.includes(state.ot)?state.ot:'ALL'; state.ot=$('filter-ot').value;
   $('filter-date').value=dates.includes(state.date)?state.date:'ALL'; state.date=$('filter-date').value;
-  $('wh-buttons').innerHTML=['ALL',...whs].map(w=>`<button data-wh="${esc(w)}" class="wh-btn px-space-sm py-1 rounded font-label-sm uppercase">${w==='ALL'?'WH: Todos':'WH '+esc(w)}</button>`).join('');
+  $('wh-buttons').innerHTML=['ALL',...whs].map(w=>`<button data-wh="${esc(w)}" class="wh-btn px-space-sm py-1 rounded font-label-sm text-label-sm uppercase">${w==='ALL'?'WH: Todos':'WH '+esc(w)}</button>`).join('');
   document.querySelectorAll('.wh-btn').forEach(b=>b.onclick=()=>{state.wh=b.dataset.wh;state.page=1;render();});
 }
 
 function filtered(includeSearch=true){
   const q=state.q.toLowerCase();
   return DATA.filter(d=>(state.ot==='ALL'||d.ot===state.ot)&&(state.date==='ALL'||d.fecha===state.date)&&(state.wh==='ALL'||d.wh===state.wh)
-    &&(!includeSearch||!q||[d.ot,d.ean,d.item,d.desc,d.lote,d.loc,d.id,d.cliente].join(' ').toLowerCase().includes(q)));
+    &&(!includeSearch||!q||[d.ot,d.ean,d.item,d.desc,d.lote,d.loc,d.cliente].join(' ').toLowerCase().includes(q)));
 }
 
 /* ============ RENDER ============ */
+const bar=(p,cls='bg-primary-container')=>`<div class="w-full bg-surface-container rounded-full h-1.5 overflow-hidden"><div class="${cls} h-full rounded-full" style="width:${p}%"></div></div>`;
 function kpi(label,icon,value,sub,extra=''){
   return `<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
-    <div class="flex items-start justify-between"><span class="font-label-sm text-secondary uppercase tracking-wider">${label}</span><span class="material-symbols-outlined text-primary text-[18px]">${icon}</span></div>
-    <div class="my-space-sm"><div class="font-headline-xl tabular-nums">${value}</div><p class="font-body-sm text-on-surface-variant mt-0.5">${sub}</p></div>${extra}</div>`;
+    <div class="flex items-start justify-between"><span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">${label}</span><span class="material-symbols-outlined text-primary text-[18px]">${icon}</span></div>
+    <div class="my-space-sm"><div class="font-headline-xl text-headline-xl tabular-nums">${value}</div><p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">${sub}</p></div>${extra}</div>`;
 }
-const bar=(pct,cls='bg-primary-container')=>`<div class="w-full bg-surface-container rounded-full h-1.5 overflow-hidden"><div class="${cls} h-full rounded-full" style="width:${Math.min(100,pct)}%"></div></div>`;
+const badge = e => e==='Completado' ? 'bg-tertiary-fixed text-tertiary' : e==='En proceso' ? 'bg-primary-fixed text-primary' : 'bg-surface-container text-secondary';
 
 function render(){
   const all=filtered(false), rows=filtered(true);
   document.querySelectorAll('.wh-btn').forEach(b=>{const on=b.dataset.wh===state.wh;
-    b.className='wh-btn px-space-sm py-1 rounded font-label-sm uppercase '+(on?'bg-primary-container text-on-primary':'text-on-surface-variant hover:bg-surface-container-high');});
+    b.className='wh-btn px-space-sm py-1 rounded font-label-sm text-label-sm uppercase '+(on?'bg-primary-container text-on-primary':'text-on-surface-variant hover:bg-surface-container-high');});
 
-  const units=all.reduce((s,d)=>s+d.qty,0);
+  const req=all.reduce((s,d)=>s+d.qty,0), pend=all.reduce((s,d)=>s+d.pend,0), done=Math.max(0,req-pend);
   const ots=[...new Set(all.map(d=>d.ot))];
   const skus=new Set(all.map(d=>d.item||d.ean)).size;
-  const lotes=new Set(all.map(d=>d.lote)).size;
   const locs=new Set(all.map(d=>d.loc)).size;
+  const full=all.filter(d=>d.pend<=0).length;
   const dates=[...new Set(all.map(d=>d.fecha))].sort();
-  const targetSum=ots.reduce((s,o)=>s+(TARGETS[o]||0),0);
-  const hasT = targetSum>0 && ots.every(o=>TARGETS[o]);
 
   $('kpis').innerHTML=[
-    kpi('Unidades Recolectadas','output',fmt(units), hasT?`de ${fmt(targetSum)} solicitadas`:'unidades en transacciones', hasT?bar(units/targetSum*100):''),
-    kpi('Órdenes (OT)','assignment',ots.length, ots.slice(0,4).join(' · ')||'—'),
-    kpi('SKUs Únicos','barcode_scanner',fmt(skus),'códigos en movimiento'),
-    kpi('Lotes Únicos','fact_check',fmt(lotes),'lotes trazados'),
-    kpi('Ubicaciones','warehouse',fmt(locs),`${fmt(all.length)} transacciones`)
+    kpi('Cumplimiento','verified',pct(done,req).toFixed(1)+'%',`${fmt(done)} de ${fmt(req)} uds`,bar(pct(done,req))),
+    kpi('Solicitado','shopping_cart_checkout',fmt(req),`${fmt(all.length)} líneas · ${ots.length} OT`),
+    kpi('Pendiente','pending_actions',fmt(pend),`${fmt(all.length-full)} líneas por completar`),
+    kpi('Líneas Completas','fact_check',`${fmt(full)}<span class="text-body-md text-on-surface-variant font-normal"> / ${fmt(all.length)}</span>`,`${fmt(skus)} SKUs únicos`,bar(pct(full,all.length),'bg-tertiary')),
+    kpi('Ubicaciones','warehouse',fmt(locs),`${fmt(new Set(all.map(d=>d.lote)).size)} lotes trazados`)
   ].join('');
 
-  $('top-ots').textContent=ots.length+' OTs'; 
+  $('top-ots').textContent=ots.length+(ots.length===1?' OT':' OTs');
   $('top-date').textContent=dates.length?(dates[0]===dates[dates.length-1]?dates[0]:dates[0]+' → '+dates[dates.length-1]):'—';
-  $('filter-summary').innerHTML=`Mostrando <strong class="text-on-surface">${ots.length} OTs</strong> | ${fmt(units)} uds`;
+  $('filter-summary').innerHTML=`Mostrando <strong class="text-on-surface">${ots.length} OTs</strong> | ${fmt(req)} uds solicitadas · ${fmt(pend)} pendientes`;
   $('sync-text').textContent='Sincronizado: '+(lastSync?lastSync.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'—');
 
-  // Tabla por OT
-  const by={}; all.forEach(d=>{(by[d.ot]=by[d.ot]||{ot:d.ot,cliente:d.cliente,wh:new Set(),skus:new Set(),lotes:new Set(),n:0,u:0,f:''});
-    const o=by[d.ot]; o.wh.add(d.wh); o.skus.add(d.item||d.ean); o.lotes.add(d.lote); o.n++; o.u+=d.qty; if(d.fecha>o.f)o.f=d.fecha;});
+  // Resumen por OT
+  const by={}; all.forEach(d=>{const o=(by[d.ot]=by[d.ot]||{ot:d.ot,cliente:d.cliente,wh:new Set(),skus:new Set(),lines:0,full:0,req:0,pend:0});
+    o.wh.add(d.wh); o.skus.add(d.item||d.ean); o.lines++; if(d.pend<=0)o.full++; o.req+=d.qty; o.pend+=d.pend;});
   const list=Object.values(by).sort((a,b)=>a.ot.localeCompare(b.ot));
-  const maxU=Math.max(1,...list.map(o=>o.u));
-  $('ot-body').innerHTML=list.map(o=>{const t=TARGETS[o.ot]; const pct=t?o.u/t*100:o.u/maxU*100;
-    return `<tr class="hover:bg-surface-container-low/60"><td class="py-space-md px-space-md"><div class="font-bold text-primary text-[15px]">${esc(o.ot)}</div><div class="text-on-surface-variant font-label-sm">${esc(o.cliente)}</div></td>
-    <td class="py-space-md px-space-md"><span class="px-2 py-0.5 rounded bg-secondary text-on-secondary font-label-sm font-semibold">${[...o.wh].filter(Boolean).map(esc).join(', ')||'—'}</span></td>
-    <td class="py-space-md px-space-md text-right font-mono">${fmt(o.skus.size)}</td><td class="py-space-md px-space-md text-right font-mono">${fmt(o.lotes.size)}</td>
-    <td class="py-space-md px-space-md text-right font-mono">${fmt(o.n)}</td>
-    <td class="py-space-md px-space-md"><div class="flex justify-between font-mono font-bold text-primary mb-1"><span>${fmt(o.u)} uds${t?' / '+fmt(t):''}</span>${t?`<span>${pct.toFixed(1)}%</span>`:''}</div>${bar(pct)}</td>
-    <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(o.f)}</td></tr>`;}).join('')||`<tr><td colspan="7" class="p-space-lg text-center text-on-surface-variant">Sin datos</td></tr>`;
+  $('ot-body').innerHTML=list.map(o=>{const dn=Math.max(0,o.req-o.pend), p=pct(dn,o.req);
+    return `<tr class="hover:bg-surface-container-low/60"><td class="py-space-md px-space-md"><div class="font-bold text-primary text-[15px]">${esc(o.ot)}</div><div class="text-on-surface-variant font-label-sm text-label-sm">${esc(o.cliente)}</div></td>
+    <td class="py-space-md px-space-md"><span class="px-2 py-0.5 rounded bg-secondary text-on-secondary font-label-sm text-label-sm font-semibold">${[...o.wh].filter(Boolean).map(esc).join(', ')||'—'}</span></td>
+    <td class="py-space-md px-space-md text-right font-mono">${fmt(o.skus.size)}</td>
+    <td class="py-space-md px-space-md text-right font-mono">${fmt(o.full)} / ${fmt(o.lines)}</td>
+    <td class="py-space-md px-space-md text-right font-mono font-semibold">${fmt(o.req)}</td>
+    <td class="py-space-md px-space-md text-right font-mono font-semibold text-tertiary">${fmt(dn)}</td>
+    <td class="py-space-md px-space-md text-right font-mono font-semibold ${o.pend>0?'text-error':'text-on-surface-variant'}">${fmt(o.pend)}</td>
+    <td class="py-space-md px-space-md"><div class="flex justify-end font-mono font-bold text-primary mb-1">${p.toFixed(1)}%</div>${bar(p)}</td></tr>`;}).join('')||`<tr><td colspan="8" class="p-space-lg text-center text-on-surface-variant">Sin datos</td></tr>`;
 
-  // Detalle paginado
+  // Detalle
   $('row-count').textContent=fmt(rows.length)+' registros';
   const pages=Math.max(1,Math.ceil(rows.length/PAGE_SIZE)); if(state.page>pages)state.page=pages;
   const s=(state.page-1)*PAGE_SIZE, slice=rows.slice(s,s+PAGE_SIZE);
-  $('detail-body').innerHTML=slice.map(d=>`<tr class="hover:bg-surface-container-low/60">
-    <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(d.id)}</td>
+  $('detail-body').innerHTML=slice.map(d=>{const e=estado(d), dn=Math.max(0,d.qty-d.pend), p=pct(dn,d.qty);
+    return `<tr class="hover:bg-surface-container-low/60 ${selected.has(d.k)?'bg-primary-fixed/40':''}">
+    <td class="py-space-md px-space-md"><input type="checkbox" class="row-sel w-4 h-4 cursor-pointer accent-[#1d4ed8]" data-k="${d.k}" ${selected.has(d.k)?'checked':''}></td>
     <td class="py-space-md px-space-md font-semibold text-primary">${esc(d.ot)}</td>
     <td class="py-space-md px-space-md font-mono text-secondary">${esc(d.ean)}</td>
-    <td class="py-space-md px-space-md"><div class="font-semibold">${esc(d.desc)}</div><div class="text-on-surface-variant font-label-sm font-mono">${esc(d.item)}</div></td>
+    <td class="py-space-md px-space-md"><div class="font-semibold">${esc(d.desc)}</div><div class="text-on-surface-variant font-label-sm text-label-sm font-mono">${esc(d.item)}</div></td>
     <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(d.lote)}</td>
     <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(d.venc)}</td>
     <td class="py-space-md px-space-md"><span class="px-2 py-0.5 rounded bg-surface-container font-mono font-bold">${esc(d.loc)}</span></td>
     <td class="py-space-md px-space-md text-center font-mono">${esc(d.wh)}</td>
     <td class="py-space-md px-space-md text-right font-mono font-semibold">${fmt(d.qty)}</td>
-    <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(d.fecha)}</td></tr>`).join('')||`<tr><td colspan="10" class="p-space-lg text-center text-on-surface-variant">Sin resultados</td></tr>`;
-  $('page-info').innerHTML=rows.length?`Mostrando <strong>${s+1} - ${Math.min(s+PAGE_SIZE,rows.length)}</strong> de ${fmt(rows.length)} registros`:'0 registros';
+    <td class="py-space-md px-space-md text-right font-mono font-semibold ${d.pend>0?'text-error':'text-on-surface-variant'}">${fmt(d.pend)}</td>
+    <td class="py-space-md px-space-md"><div class="flex justify-between font-mono text-label-sm mb-1"><span>${fmt(dn)} uds</span><span>${p.toFixed(0)}%</span></div>${bar(p, e==='Completado'?'bg-tertiary-container':'bg-primary-container')}</td>
+    <td class="py-space-md px-space-md text-center"><span class="inline-flex px-2.5 py-1 rounded-full ${badge(e)} font-label-sm text-label-sm font-semibold">${e}</span></td>
+    <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(d.fecha)}</td></tr>`;}).join('')||`<tr><td colspan="13" class="p-space-lg text-center text-on-surface-variant">Sin resultados</td></tr>`;
+  const nSel=selected.size;
+  $('page-info').innerHTML=(rows.length?`Mostrando <strong>${s+1} - ${Math.min(s+PAGE_SIZE,rows.length)}</strong> de ${fmt(rows.length)} registros`:'0 registros')+(nSel?` • <strong class="text-primary">${fmt(nSel)} seleccionados</strong>`:'');
   $('page-num').textContent=state.page+' / '+pages; $('prev').disabled=state.page<=1; $('next').disabled=state.page>=pages;
+  $('xls-label').textContent = nSel ? `Excel (.xls) · ${fmt(nSel)} sel.` : 'Excel (.xls)';
+  const allSel = rows.length>0 && rows.every(d=>selected.has(d.k));
+  $('sel-all').checked=allSel; $('sel-all').indeterminate=!allSel && rows.some(d=>selected.has(d.k));
 
   // Gráfico por OT
-  const colors=['bg-primary-container','bg-tertiary-container','bg-secondary'];
-  $('chart-ot').innerHTML=list.map((o,i)=>`<div class="flex flex-col gap-1"><div class="flex justify-between font-label-sm"><span class="font-bold">${esc(o.ot)}</span><span class="font-mono font-bold">${fmt(o.u)} uds</span></div>
-    <div class="w-full bg-surface-container rounded-full h-3 overflow-hidden"><div class="${colors[i%3]} h-full rounded-full transition-all duration-500" style="width:${o.u/maxU*100}%"></div></div></div>`).join('')||'<p class="text-on-surface-variant">Sin datos</p>';
+  $('chart-ot').innerHTML=list.map(o=>{const dn=Math.max(0,o.req-o.pend), p=pct(dn,o.req);
+    return `<div class="flex flex-col gap-1"><div class="flex justify-between font-label-sm text-label-sm"><span class="font-bold">${esc(o.ot)}</span><span class="font-mono font-bold">${fmt(dn)} / ${fmt(o.req)} uds (${p.toFixed(1)}%)</span></div>
+    <div class="w-full bg-surface-container rounded-full h-3 overflow-hidden"><div class="${p>=100?'bg-tertiary-container':'bg-primary-container'} h-full rounded-full transition-all duration-500" style="width:${p}%"></div></div></div>`;}).join('')||'<p class="text-on-surface-variant">Sin datos</p>';
 
   // Gráfico por WH
-  const w={}; all.forEach(d=>{const k=d.wh||'—'; w[k]=(w[k]||0)+d.qty;});
+  const w={}; all.forEach(d=>{const k=d.wh||'—'; (w[k]=w[k]||{req:0,pend:0}); w[k].req+=d.qty; w[k].pend+=d.pend;});
   const wc=['bg-primary-container','bg-secondary','bg-tertiary-container'];
-  const ent=Object.entries(w).sort((a,b)=>b[1]-a[1]);
-  $('chart-wh').innerHTML=`<div class="w-full bg-surface-container rounded-full h-3 flex overflow-hidden mb-space-sm">${ent.map(([k,v],i)=>`<div class="${wc[i%3]} h-full" style="width:${units?v/units*100:0}%"></div>`).join('')}</div>`+
-    ent.map(([k,v],i)=>`<div class="flex items-center justify-between font-label-sm"><div class="flex items-center gap-space-xs"><span class="w-3 h-3 rounded-full ${wc[i%3]}"></span><span class="font-bold">Planta ${esc(k)} (${units?(v/units*100).toFixed(1):0}%)</span></div><span class="font-mono text-on-surface-variant">${fmt(v)} uds</span></div>`).join('');
+  const ent=Object.entries(w).sort((a,b)=>b[1].req-a[1].req);
+  $('chart-wh').innerHTML=`<div class="w-full bg-surface-container rounded-full h-3 flex overflow-hidden mb-space-sm">${ent.map(([k,v],i)=>`<div class="${wc[i%3]} h-full" style="width:${req?v.req/req*100:0}%"></div>`).join('')}</div>`+
+    ent.map(([k,v],i)=>`<div class="flex items-center justify-between font-label-sm text-label-sm"><div class="flex items-center gap-space-xs"><span class="w-3 h-3 rounded-full ${wc[i%3]}"></span><span class="font-bold">Planta ${esc(k)} (${req?(v.req/req*100).toFixed(1):0}%)</span></div><span class="font-mono text-on-surface-variant">${fmt(v.req)} sol. · ${fmt(v.pend)} pend.</span></div>`).join('');
+}
+
+/* ============ EXPORTAR A EXCEL (.xls) ============ */
+function exportXls(){
+  if(typeof XLSX==='undefined'){ alert('No se pudo cargar la librería de Excel. Revisa tu conexión.'); return; }
+  const base = filtered(true);
+  const rows = selected.size ? DATA.filter(d=>selected.has(d.k)) : base;
+  if(!rows.length){ alert('No hay registros para exportar.'); return; }
+  const detalle = rows.map(d=>({ 'Orden':d.ot, 'Cliente':d.cliente, 'EAN-13':d.ean, 'Item':d.item, 'Descripción':d.desc, 'Lote':d.lote,
+    'Vencimiento':d.venc, 'Ubicación':d.loc, 'WH':d.wh, 'Solicitado':d.qty, 'Pendiente':d.pend,
+    'Recolectado':Math.max(0,d.qty-d.pend), 'Avance %':+pct(Math.max(0,d.qty-d.pend),d.qty).toFixed(1), 'Estado':estado(d), 'Fecha':d.fecha }));
+  const by={}; rows.forEach(d=>{const o=(by[d.ot]=by[d.ot]||{'Orden':d.ot,'Líneas':0,'Solicitado':0,'Pendiente':0}); o['Líneas']++; o['Solicitado']+=d.qty; o['Pendiente']+=d.pend;});
+  const resumen = Object.values(by).map(o=>({...o,'Recolectado':Math.max(0,o['Solicitado']-o['Pendiente']),'Avance %':+pct(Math.max(0,o['Solicitado']-o['Pendiente']),o['Solicitado']).toFixed(1)}));
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.json_to_sheet(detalle); ws1['!cols']=[8,22,16,22,50,14,12,12,6,11,11,12,9,12,12].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws1, 'Detalle');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumen), 'Resumen OT');
+  XLSX.writeFile(wb, `control_ot_${new Date().toISOString().slice(0,10)}.xls`, {bookType:'biff8'});
+}
+
+/* ============ HISTÓRICO OT ============ */
+let HDAYS=[], hSel={from:null,to:null}, hRows=[], hasFM=true;
+const worked = d => Math.max(0, d.qty - d.pend);
+
+function buildHist(){
+  hasFM = DATA.some(d=>d.fm);
+  HDAYS=[...new Set(DATA.filter(d=>d.fm).map(d=>d.fm.day))].sort();
+  const n=HDAYS.length, f=$('hist-from'), t=$('hist-to');
+  f.max=t.max=Math.max(0,n-1);
+  let a=HDAYS.indexOf(hSel.from), b=HDAYS.indexOf(hSel.to);
+  if(a<0) a=0; if(b<0) b=Math.max(0,n-1);
+  f.value=a; t.value=b;
+  renderHist();
+}
+function renderHist(){
+  const warn=$('hist-warn');
+  if(!hasFM){ warn.textContent='No encontré datos en la columna FECHA MOV (¿cambió el nombre del encabezado o está vacía?).'; warn.classList.remove('hidden'); }
+  else warn.classList.add('hidden');
+  const n=HDAYS.length; let a=+$('hist-from').value, b=+$('hist-to').value;
+  if(a>b){ [a,b]=[b,a]; }
+  const fromDay=HDAYS[a]||'', toDay=HDAYS[b]||'';
+  hSel={from:fromDay,to:toDay};
+  const pos=i=> n>1 ? i/(n-1)*100 : 0, fill=$('hist-fill');
+  fill.style.left=pos(a)+'%'; fill.style.width=(pos(b)-pos(a))+'%';
+  $('hist-min-lbl').textContent=HDAYS[0]||'—'; $('hist-max-lbl').textContent=HDAYS[n-1]||'—';
+
+  // gráfico diario
+  const perDay={}; DATA.forEach(d=>{ if(d.fm) perDay[d.fm.day]=(perDay[d.fm.day]||0)+worked(d); });
+  const mx=Math.max(1,...Object.values(perDay));
+  $('hist-chart').innerHTML=HDAYS.map((day,i)=>{const v=perDay[day]||0, inr=i>=a&&i<=b;
+    return `<div class="flex-1 min-w-[3px] rounded-t ${inr?'bg-primary-container':'bg-surface-container-highest'}" style="height:${Math.max(2,v/mx*100)}%" title="${day}: ${fmt(v)} uds"></div>`;}).join('')||'<div class="text-on-surface-variant font-body-sm text-body-sm self-center">Sin fechas</div>';
+
+  // agregación por OT
+  const by={};
+  DATA.forEach(d=>{
+    const o=(by[d.ot]=by[d.ot]||{ot:d.ot,cliente:d.cliente,wh:new Set(),items:new Set(),itemsR:new Set(),req:0,wAll:0,uR:0,first:null,last:null});
+    const it=d.item||d.ean; o.wh.add(d.wh); o.items.add(it); o.req+=d.qty; o.wAll+=worked(d);
+    if(d.fm){
+      if(!o.first||d.fm.ts<o.first.ts) o.first=d.fm;
+      if(!o.last||d.fm.ts>o.last.ts) o.last=d.fm;
+      if(d.fm.day>=fromDay && d.fm.day<=toDay && worked(d)>0){ o.uR+=worked(d); o.itemsR.add(it); }
+    }
+  });
+  hRows=Object.values(by).sort((x,y)=>x.ot.localeCompare(y.ot));
+  const totalR=hRows.reduce((s,o)=>s+o.uR,0);
+  $('hist-range-lbl').textContent = fromDay ? (fromDay===toDay?fromDay:`${fromDay}  →  ${toDay}`) : '—';
+  $('hist-total-lbl').textContent = `${fmt(totalR)} uds trabajadas en el rango`;
+
+  $('hist-body').innerHTML=hRows.map(o=>{
+    const pc=pct(o.itemsR.size,o.items.size), pu=pct(o.uR,o.req);
+    const e = o.wAll>=o.req && o.req>0 ? 'Culminado' : (o.wAll>0 ? 'En proceso' : 'Pendiente');
+    const eb = e==='Culminado'?'bg-tertiary-fixed text-tertiary':e==='En proceso'?'bg-primary-fixed text-primary':'bg-surface-container text-secondary';
+    const dim = o.uR===0 ? 'opacity-50' : '';
+    return `<tr class="hover:bg-surface-container-low/60 ${dim}">
+      <td class="py-space-md px-space-md"><div class="font-bold text-primary text-[15px]">${esc(o.ot)}</div><div class="text-on-surface-variant font-label-sm text-label-sm">${esc(o.cliente)}</div></td>
+      <td class="py-space-md px-space-md"><span class="px-2 py-0.5 rounded bg-secondary text-on-secondary font-label-sm text-label-sm font-semibold">${[...o.wh].filter(Boolean).map(esc).join(', ')||'—'}</span></td>
+      <td class="py-space-md px-space-md"><div class="flex justify-between font-mono font-bold text-primary mb-1 text-label-sm"><span>${fmt(o.itemsR.size)} de ${fmt(o.items.size)} SKUs</span><span>${pc.toFixed(1)}%</span></div>${bar(pc)}</td>
+      <td class="py-space-md px-space-md"><div class="flex justify-between font-mono font-bold text-primary mb-1 text-label-sm"><span>${fmt(o.uR)} / ${fmt(o.req)} uds</span><span>${pu.toFixed(1)}%</span></div>${bar(pu)}</td>
+      <td class="py-space-md px-space-md text-center"><span class="inline-flex px-2.5 py-1 rounded-full ${eb} font-label-sm text-label-sm font-semibold">${e}</span></td>
+      <td class="py-space-md px-space-md text-right font-mono font-semibold text-on-surface">${o.first?esc(o.first.txt):'—'}</td>
+      <td class="py-space-md px-space-md text-right font-mono font-semibold text-on-surface">${o.last?esc(o.last.txt):'—'}</td></tr>`;
+  }).join('')||`<tr><td colspan="7" class="p-space-lg text-center text-on-surface-variant">Sin datos</td></tr>`;
+}
+function exportHist(){
+  if(typeof XLSX==='undefined'){ alert('No se pudo cargar la librería de Excel.'); return; }
+  if(!hRows.length){ alert('No hay datos para exportar.'); return; }
+  const out=hRows.map(o=>({'Orden':o.ot,'Cliente':o.cliente,'WH':[...o.wh].filter(Boolean).join(', '),
+    'SKUs trabajados (rango)':o.itemsR.size,'SKUs totales':o.items.size,
+    'Unidades trabajadas (rango)':o.uR,'Unidades solicitadas':o.req,'Unidades trabajadas (total)':o.wAll,
+    'Avance rango %':+pct(o.uR,o.req).toFixed(1),'Fecha inicial':o.first?o.first.txt:'','Fecha final':o.last?o.last.txt:'',
+    'Rango desde':hSel.from,'Rango hasta':hSel.to}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(out), 'Histórico OT');
+  XLSX.writeFile(wb, `historico_ot_${new Date().toISOString().slice(0,10)}.xls`, {bookType:'biff8'});
 }
 
 /* ============ EVENTOS ============ */
@@ -333,11 +500,14 @@ $('table-search').oninput=e=>{state.q=e.target.value;$('global-search').value=e.
 $('global-search').oninput=e=>{state.q=e.target.value;$('table-search').value=e.target.value;state.page=1;render();};
 $('prev').onclick=()=>{state.page--;render();}; $('next').onclick=()=>{state.page++;render();};
 $('btn-refresh').onclick=load;
-$('btn-csv').onclick=()=>{
-  const rows=filtered(true), h=['ID','OT','EAN','Item','Descripcion','Lote','Vencimiento','Ubicacion','WH','Cantidad','Fecha'];
-  const csv=[h,...rows.map(d=>[d.id,d.ot,d.ean,d.item,d.desc,d.lote,d.venc,d.loc,d.wh,d.qty,d.fecha])].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'})); a.download='detalle_ot.csv'; a.click();
-};
+$('btn-xls').onclick=exportXls; $('btn-xls2').onclick=exportXls;
+$('sel-all').onchange=e=>{ const rows=filtered(true); rows.forEach(d=>e.target.checked?selected.add(d.k):selected.delete(d.k)); render(); };
+$('detail-body').addEventListener('change',e=>{ if(e.target.classList.contains('row-sel')){ const k=+e.target.dataset.k; e.target.checked?selected.add(k):selected.delete(k); render(); }});
+
+$('hist-from').oninput=()=>{ if(+$('hist-from').value>+$('hist-to').value) $('hist-to').value=$('hist-from').value; renderHist(); };
+$('hist-to').oninput=()=>{ if(+$('hist-to').value<+$('hist-from').value) $('hist-from').value=$('hist-to').value; renderHist(); };
+$('hist-all').onclick=()=>{ $('hist-from').value=0; $('hist-to').value=Math.max(0,HDAYS.length-1); renderHist(); };
+$('hist-xls').onclick=exportHist;
 
 load(); setInterval(load, REFRESH_MS);
 </script>
