@@ -102,7 +102,7 @@
             <p class="font-body-sm text-body-sm text-on-surface-variant">Cruce de lo solicitado (TRANS QUANTITY) contra lo pendiente (SALDO). Se muestran 5 órdenes; usa la barra vertical para ver el resto.</p>
           </div>
           <div class="flex flex-wrap items-center gap-space-sm">
-            <select id="d-ot" class="bg-surface-container-low pl-3 pr-3 py-1.5 rounded font-label-md text-label-md focus:outline-none cursor-pointer"></select>
+            <div class="relative" id="ms-d-ot"></div>
             <label class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">Desde <input type="date" id="d-from" class="bg-surface-container-low rounded px-2 py-1 font-label-md text-label-md text-on-surface focus:outline-none"></label>
             <label class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">Hasta <input type="date" id="d-to" class="bg-surface-container-low rounded px-2 py-1 font-label-md text-label-md text-on-surface focus:outline-none"></label>
             <button id="d-clear" class="px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md">Limpiar</button>
@@ -123,7 +123,7 @@
       </div>
 
       <!-- Detalle -->
-      <div class="bg-surface-container-lowest rounded-xl shadow-sm flex flex-col overflow-hidden scroll-mt-20" id="detalle">
+      <div class="bg-surface-container-lowest rounded-xl shadow-sm flex flex-col scroll-mt-20" id="detalle">
         <div class="p-space-lg flex flex-col md:flex-row md:items-center justify-between gap-space-md">
           <div>
             <h3 class="font-headline-md text-headline-md flex items-center gap-space-xs">Detalle Operativo por Ítem, Lote y Ubicación
@@ -131,6 +131,8 @@
             <p class="font-body-sm text-body-sm text-on-surface-variant">Traza física por SKU, lote y ubicación WMS.</p>
           </div>
           <div class="flex flex-wrap items-center gap-space-sm">
+            <div class="relative" id="ms-t-ot"></div>
+            <div class="relative" id="ms-t-est"></div>
             <div class="relative">
               <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">search</span>
               <input id="table-search" class="pl-8 pr-3 py-1.5 bg-surface-container-low rounded text-body-md focus:outline-none w-64" placeholder="Filtrar por SKU, lote o ubicación..." type="text">
@@ -153,7 +155,7 @@
             <tbody id="detail-body" class="divide-y divide-surface-container font-body-sm text-body-sm"></tbody>
           </table>
         </div>
-        <div class="p-space-md bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm text-on-surface-variant font-label-sm text-label-sm">
+        <div class="p-space-md bg-surface-container-low rounded-b-xl flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm text-on-surface-variant font-label-sm text-label-sm">
           <span id="page-info"></span>
           <div class="flex items-center gap-1">
             <button id="prev" class="px-2 py-0.5 rounded bg-surface-container-lowest hover:bg-surface-container disabled:opacity-40">‹ Anterior</button>
@@ -327,8 +329,7 @@ function buildFilters(){
   const whs=[...new Set(DATA.map(d=>d.wh).filter(Boolean))].sort();
   $('filter-ot').innerHTML=`<option value="ALL">Todas las Órdenes (${ots.length})</option>`+ots.map(o=>`<option>${esc(o)}</option>`).join('');
   $('filter-date').innerHTML=`<option value="ALL">Todas las fechas</option>`+dates.map(o=>`<option>${esc(o)}</option>`).join('');
-  $('d-ot').innerHTML=`<option value="ALL">Todas las OT (${ots.length})</option>`+ots.map(o=>`<option>${esc(o)}</option>`).join('');
-  $('d-ot').value=ots.includes(dState.ot)?dState.ot:'ALL'; dState.ot=$('d-ot').value;
+  msRefresh('ms-d-ot'); msRefresh('ms-t-ot'); msRefresh('ms-t-est');
   const vd=dates.filter(Boolean); ['d-from','d-to'].forEach(id=>{ $(id).min=vd[vd.length-1]||''; $(id).max=vd[0]||''; });
   $('filter-ot').value=ots.includes(state.ot)?state.ot:'ALL'; state.ot=$('filter-ot').value;
   $('filter-date').value=dates.includes(state.date)?state.date:'ALL'; state.date=$('filter-date').value;
@@ -342,12 +343,46 @@ function filtered(includeSearch=true){
     &&(!includeSearch||!q||[d.ot,d.ean,d.item,d.desc,d.lote,d.loc,d.cliente].join(' ').toLowerCase().includes(q)));
 }
 
+/* ============ MULTI-SELECT (varias opciones a la vez) ============ */
+const MS={};
+function msInit(id, allLabel, getOpts, set, onChange){
+  const root=$(id);
+  root.innerHTML=`<button type="button" class="ms-btn flex items-center gap-1 bg-surface-container-low hover:bg-surface-container-high pl-3 pr-2 py-1.5 rounded font-label-md text-label-md max-w-[260px]"><span class="ms-lbl truncate"></span><span class="material-symbols-outlined text-[16px]">expand_more</span></button>
+    <div class="ms-panel hidden absolute left-0 top-full mt-1 z-30 w-64 bg-surface-container-lowest rounded-xl shadow-lg border border-surface-container p-space-sm">
+      <div class="flex items-center justify-between mb-1 px-1 font-label-md text-label-md"><span class="text-on-surface-variant">Marca una o varias</span><button type="button" class="ms-clear text-primary hover:underline">Ver todas</button></div>
+      <div class="ms-list max-h-56 overflow-y-auto flex flex-col"></div></div>`;
+  MS[id]={root,allLabel,getOpts,set,onChange};
+  root.querySelector('.ms-btn').onclick=e=>{ e.stopPropagation(); const p=root.querySelector('.ms-panel'), open=p.classList.contains('hidden'); msCloseAll(); if(open) p.classList.remove('hidden'); };
+  root.querySelector('.ms-panel').onclick=e=>e.stopPropagation();
+  root.querySelector('.ms-clear').onclick=()=>{ set.clear(); msRefresh(id); onChange(); };
+  root.querySelector('.ms-list').onchange=e=>{ const v=e.target.dataset.v; e.target.checked?set.add(v):set.delete(v); msLabel(id); onChange(); };
+}
+function msLabel(id){
+  const m=MS[id], opts=m.getOpts(), sel=[...m.set];
+  let t = sel.length===0 ? `${m.allLabel} (${opts.length})` : sel.length<=2 ? sel.join(', ') : `${sel.length} seleccionadas`;
+  m.root.querySelector('.ms-lbl').textContent=t;
+}
+function msRefresh(id){
+  const m=MS[id], opts=m.getOpts().map(o=>o.v);
+  [...m.set].forEach(v=>{ if(!opts.includes(v)) m.set.delete(v); });
+  m.root.querySelector('.ms-list').innerHTML=m.getOpts().map(o=>`<label class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-surface-container-low cursor-pointer font-body-md text-body-md"><input type="checkbox" data-v="${esc(o.v)}" class="w-4 h-4 accent-[#1d4ed8]" ${m.set.has(o.v)?'checked':''}><span>${esc(o.t)}</span></label>`).join('')||'<div class="px-2 py-2 text-on-surface-variant font-body-sm text-body-sm">Sin opciones</div>';
+  msLabel(id);
+}
+function msCloseAll(){ document.querySelectorAll('.ms-panel').forEach(p=>p.classList.add('hidden')); }
+document.addEventListener('click', msCloseAll);
+const otOpts = () => [...new Set(DATA.map(d=>d.ot))].sort().map(o=>({v:o,t:o}));
+const ESTADOS = ['Completado','En proceso','Pendiente'].map(e=>({v:e,t:e}));
+function detailRows(){
+  return filtered(true).filter(d=>(!tState.ots.size||tState.ots.has(d.ot)) && (!tState.est.size||tState.est.has(estado(d))));
+}
+
 /* ============ DESGLOSE (filtros propios) ============ */
-const dState={ot:'ALL',from:'',to:''};
+const dState={ots:new Set(),from:'',to:''};
+const tState={ots:new Set(),est:new Set()};
 function desgloseList(){
   const by={};
   DATA.forEach(d=>{
-    if(dState.ot!=='ALL' && d.ot!==dState.ot) return;
+    if(dState.ots.size && !dState.ots.has(d.ot)) return;
     if(dState.from && (!d.fecha || d.fecha<dState.from)) return;     // TRANSACTION DATE (yyyymmdd → yyyy-mm-dd)
     if(dState.to && (!d.fecha || d.fecha>dState.to)) return;
     const o=(by[d.ot]=by[d.ot]||{ot:d.ot,cliente:d.cliente,wh:new Set(),skus:new Set(),lines:0,full:0,req:0,pend:0});
@@ -366,7 +401,7 @@ function kpi(label,icon,value,sub,extra=''){
 const badge = e => e==='Completado' ? 'bg-tertiary-fixed text-tertiary' : e==='En proceso' ? 'bg-primary-fixed text-primary' : 'bg-surface-container text-secondary';
 
 function render(){
-  const all=filtered(false), rows=filtered(true);
+  const all=filtered(false), rows=detailRows();
   document.querySelectorAll('.wh-btn').forEach(b=>{const on=b.dataset.wh===state.wh;
     b.className='wh-btn px-space-sm py-1 rounded font-label-sm text-label-sm uppercase '+(on?'bg-primary-container text-on-primary':'text-on-surface-variant hover:bg-surface-container-high');});
 
@@ -446,7 +481,7 @@ function render(){
 /* ============ EXPORTAR A EXCEL (.xls) ============ */
 function exportXls(){
   if(typeof XLSX==='undefined'){ alert('No se pudo cargar la librería de Excel. Revisa tu conexión.'); return; }
-  const base = filtered(true);
+  const base = detailRows();
   const rows = selected.size ? DATA.filter(d=>selected.has(d.k)) : base;
   if(!rows.length){ alert('No hay registros para exportar.'); return; }
   const detalle = rows.map(d=>({ 'Orden':d.ot, 'Cliente':d.cliente, 'EAN-13':d.ean, 'Item':d.item, 'Descripción':d.desc, 'Lote':d.lote,
@@ -545,7 +580,7 @@ $('global-search').oninput=e=>{state.q=e.target.value;$('table-search').value=e.
 $('prev').onclick=()=>{state.page--;render();}; $('next').onclick=()=>{state.page++;render();};
 $('btn-refresh').onclick=load;
 $('btn-xls').onclick=exportXls; $('btn-xls2').onclick=exportXls;
-$('sel-all').onchange=e=>{ const rows=filtered(true); rows.forEach(d=>e.target.checked?selected.add(d.k):selected.delete(d.k)); render(); };
+$('sel-all').onchange=e=>{ const rows=detailRows(); rows.forEach(d=>e.target.checked?selected.add(d.k):selected.delete(d.k)); render(); };
 $('detail-body').addEventListener('change',e=>{ if(e.target.classList.contains('row-sel')){ const k=+e.target.dataset.k; e.target.checked?selected.add(k):selected.delete(k); render(); }});
 
 $('hist-from').oninput=()=>{ if(+$('hist-from').value>+$('hist-to').value) $('hist-to').value=$('hist-from').value; renderHist(); };
@@ -554,10 +589,13 @@ $('hist-all').onclick=()=>{ $('hist-from').value=0; $('hist-to').value=Math.max(
 $('hist-xls').onclick=exportHist; $('hist-refresh').onclick=load;
 $('hist-d-from').onchange=e=>{ const v=e.target.value; let i=v?HDAYS.findIndex(d=>d>=v):0; if(i<0)i=Math.max(0,HDAYS.length-1); $('hist-from').value=i; if(+$('hist-to').value<i)$('hist-to').value=i; renderHist(); };
 $('hist-d-to').onchange=e=>{ const v=e.target.value; let i=HDAYS.length-1; if(v){ i=HDAYS.map(d=>d<=v).lastIndexOf(true); if(i<0)i=0; } $('hist-to').value=i; if(+$('hist-from').value>i)$('hist-from').value=i; renderHist(); };
-$('d-ot').onchange=e=>{dState.ot=e.target.value;render();};
+msInit('ms-d-ot','Todas las OT',otOpts,dState.ots,()=>render());
+msInit('ms-t-ot','Todas las OT',otOpts,tState.ots,()=>{state.page=1;render();});
+msInit('ms-t-est','Todos los estados',()=>ESTADOS,tState.est,()=>{state.page=1;render();});
+msRefresh('ms-d-ot'); msRefresh('ms-t-ot'); msRefresh('ms-t-est');
 $('d-from').onchange=e=>{dState.from=e.target.value;render();};
 $('d-to').onchange=e=>{dState.to=e.target.value;render();};
-$('d-clear').onclick=()=>{dState.ot='ALL';dState.from='';dState.to='';$('d-ot').value='ALL';$('d-from').value='';$('d-to').value='';render();};
+$('d-clear').onclick=()=>{dState.ots.clear();dState.from='';dState.to='';msRefresh('ms-d-ot');$('d-from').value='';$('d-to').value='';render();};
 
 function showView(v){
   const dash = v!=='hist';
