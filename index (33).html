@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogiTrack · Control Ejecutivo de OT</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
+<style>html,body{margin:0;padding:0}body{overscroll-behavior:none}::-webkit-scrollbar{display:none}.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400}</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"on-tertiary":"#ffffff","surface-container-low":"#eff4ff","outline-variant":"#c4c5d7","outline":"#747686","surface-container-highest":"#d3e4fe","tertiary-container":"#006948","secondary-container":"#dae2fd","on-secondary":"#ffffff","primary":"#0037b0","tertiary":"#004f35","error":"#ba1a1a","surface-container-lowest":"#ffffff","surface-container-high":"#dce9ff","surface":"#f8f9ff","on-primary":"#ffffff","tertiary-fixed":"#85f8c4","primary-fixed":"#dce1ff","primary-container":"#1d4ed8","on-surface":"#0b1c30","on-primary-fixed":"#001551","secondary-fixed":"#dae2fd","on-secondary-fixed":"#131b2e","on-surface-variant":"#434655","background":"#f8f9ff","surface-container":"#e5eeff","secondary":"#565e74"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"gutter-lg":"1.5rem","margin-sm":"1rem","space-md":"0.75rem","space-xl":"1.5rem","gutter":"1rem","margin-lg":"2rem","space-xs":"0.25rem","margin":"1.5rem","space-sm":"0.5rem","space-lg":"1rem"},"fontFamily":{"label-md":["Inter"],"body-md":["Inter"],"body-sm":["Inter"],"label-sm":["Inter"],"label-lg":["Inter"],"headline-xl":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"]},"fontSize":{"label-md":["11px",{"lineHeight":"16px","letterSpacing":"0.025em","fontWeight":"600"}],"body-md":["13px",{"lineHeight":"18px","fontWeight":"400"}],"label-sm":["10px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"700"}],"label-lg":["13px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"600"}],"headline-xl":["30px",{"lineHeight":"38px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-md":["18px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}]}}}}</script>
+</head>
+<body class="bg-background font-body-md text-on-surface antialiased">
+
+<!-- SIDEBAR -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between py-margin-sm">
+  <div class="flex flex-col gap-space-lg">
+    <div class="px-space-lg flex items-center gap-space-sm">
+      <span class="material-symbols-outlined text-primary text-[32px]">local_shipping</span>
+      <div class="flex flex-col"><span class="font-headline-md text-headline-md text-primary">LogiTrack</span><span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Executive WMS</span></div>
+    </div>
+    <nav class="flex flex-col gap-space-xs px-space-md">
+      <a class="flex items-center gap-space-sm px-space-md py-space-sm bg-primary-container text-on-primary font-label-lg rounded-xl shadow-sm" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span><span>Tablero de Control</span></a>
+      <a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high" href="#detalle"><span class="material-symbols-outlined text-[20px]">inventory_2</span><span>Detalle por Lote y Ubicación</span></a>
+      <a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high" href="#analisis"><span class="material-symbols-outlined text-[20px]">query_stats</span><span>Análisis por OT</span></a>
+    </nav>
+  </div>
+  <div class="px-space-md">
+    <div class="bg-surface-container-lowest rounded-xl p-space-sm shadow-sm font-label-sm text-on-surface-variant">
+      <div class="flex justify-between"><span>Fuente de datos</span><span class="text-tertiary font-bold" id="side-status">…</span></div>
+      <div class="mt-1">Google Sheets (CSV)</div>
+    </div>
+  </div>
+</aside>
+
+<div class="pl-64 flex flex-col min-h-screen">
+  <!-- TOPBAR -->
+  <header class="fixed top-0 left-64 right-0 h-16 bg-surface/90 backdrop-blur-xl shadow-sm z-40 flex items-center justify-between px-gutter-lg gap-space-md">
+    <div class="flex items-center gap-space-lg flex-1">
+      <div class="flex items-center gap-space-xs font-label-md text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">domain</span>Logística<span class="material-symbols-outlined text-[14px]">chevron_right</span><span class="text-primary font-bold">Centro de Operaciones</span></div>
+      <div class="relative max-w-md w-full">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+        <input id="global-search" class="w-full pl-9 pr-4 py-1.5 bg-surface-container-low rounded-xl text-body-md focus:outline-none focus:bg-surface-container-lowest" placeholder="Buscar OT, SKU, lote o ubicación..." type="text">
+      </div>
+    </div>
+    <div class="hidden xl:flex items-center gap-space-sm bg-surface-container-low px-space-sm py-1 rounded-xl font-label-sm">
+      <span class="material-symbols-outlined text-[16px] text-secondary">calendar_today</span>
+      <span id="top-date">—</span><span class="text-outline-variant">|</span><span class="text-tertiary font-bold" id="top-ots">0 OTs</span>
+    </div>
+  </header>
+
+  <main class="w-full pt-16 bg-background flex-1 px-gutter-lg py-margin">
+    <div class="flex flex-col w-full gap-space-lg">
+
+      <!-- Encabezado -->
+      <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
+        <div class="flex flex-col gap-space-xs">
+          <span class="inline-flex w-fit items-center px-space-xs py-0.5 rounded bg-primary text-on-primary font-label-sm uppercase tracking-wider">Mando Operativo WMS</span>
+          <h1 class="font-headline-xl text-headline-xl tracking-tight">Control Ejecutivo de Órdenes de Trabajo (OT)</h1>
+          <p class="font-body-md text-on-surface-variant max-w-2xl">Monitoreo de picking y despacho alimentado en vivo desde Google Sheets.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-space-sm">
+          <div class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container-low text-on-surface-variant font-label-md">
+            <span class="w-2 h-2 rounded-full bg-tertiary-container animate-pulse" id="sync-dot"></span><span id="sync-text">Cargando…</span>
+          </div>
+          <button id="btn-refresh" class="flex items-center gap-space-xs px-space-md py-2 rounded bg-surface-container hover:bg-surface-container-high font-label-lg shadow-sm"><span class="material-symbols-outlined text-[16px]">sync</span>Actualizar Datos</button>
+          <button id="btn-csv" class="flex items-center gap-space-xs px-space-md py-2 rounded bg-primary-container text-on-primary hover:bg-primary font-label-lg shadow-sm"><span class="material-symbols-outlined text-[16px]">download</span>Exportar CSV</button>
+        </div>
+      </div>
+
+      <div id="error-box" class="hidden bg-error-container bg-red-100 text-error p-space-md rounded-xl font-body-md"></div>
+
+      <!-- Filtros -->
+      <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-space-md">
+        <div class="flex flex-wrap items-center gap-space-sm">
+          <div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm uppercase"><span class="material-symbols-outlined text-[18px]">filter_alt</span>Filtros:</div>
+          <select id="filter-ot" class="bg-surface-container-low pl-3 pr-3 py-1.5 rounded font-label-md focus:outline-none cursor-pointer"></select>
+          <select id="filter-date" class="bg-surface-container-low pl-3 pr-3 py-1.5 rounded font-label-md focus:outline-none cursor-pointer"></select>
+          <div id="wh-buttons" class="flex items-center bg-surface-container-low p-0.5 rounded"></div>
+        </div>
+        <div class="font-label-sm text-on-surface-variant flex items-center gap-space-sm"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span><span id="filter-summary"></span></div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-space-md" id="kpis"></div>
+
+      <!-- Desglose por OT -->
+      <div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col gap-space-md" id="analisis">
+        <div>
+          <h2 class="font-headline-md flex items-center gap-space-xs"><span class="material-symbols-outlined text-primary text-[22px]">assignment</span>Desglose por Orden de Trabajo</h2>
+          <p class="font-body-sm text-on-surface-variant">Unidades recolectadas, SKUs y lotes por OT. Si configuras metas en <code>TARGETS</code> se muestra el % de avance.</p>
+        </div>
+        <div class="overflow-x-auto rounded-xl border border-surface-container">
+          <table class="w-full text-left border-collapse">
+            <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm uppercase tracking-wider">
+              <th class="py-space-sm px-space-md">Orden (OT)</th><th class="py-space-sm px-space-md">Almacén</th>
+              <th class="py-space-sm px-space-md text-right">SKUs</th><th class="py-space-sm px-space-md text-right">Lotes</th>
+              <th class="py-space-sm px-space-md text-right">Transacciones</th>
+              <th class="py-space-sm px-space-md min-w-[240px]">Unidades Recolectadas</th>
+              <th class="py-space-sm px-space-md">Última fecha</th>
+            </tr></thead>
+            <tbody id="ot-body" class="divide-y divide-surface-container font-body-sm bg-surface-container-lowest"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Detalle -->
+      <div class="bg-surface-container-lowest rounded-xl shadow-sm flex flex-col overflow-hidden" id="detalle">
+        <div class="p-space-lg flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+          <div>
+            <h3 class="font-headline-md flex items-center gap-space-xs">Detalle Operativo por Ítem, Lote y Ubicación
+              <span class="px-2 py-0.5 rounded-full bg-surface-container text-primary font-label-sm font-bold" id="row-count">0</span></h3>
+            <p class="font-body-sm text-on-surface-variant">Traza física por SKU, lote y ubicación WMS.</p>
+          </div>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">search</span>
+            <input id="table-search" class="pl-8 pr-3 py-1.5 bg-surface-container-low rounded text-body-md focus:outline-none w-64" placeholder="Filtrar por SKU, lote o ubicación..." type="text">
+          </div>
+        </div>
+        <div class="w-full overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm uppercase tracking-wider">
+              <th class="py-space-sm px-space-md">ID</th><th class="py-space-sm px-space-md">Orden</th><th class="py-space-sm px-space-md">EAN-13</th>
+              <th class="py-space-sm px-space-md min-w-[260px]">Descripción</th><th class="py-space-sm px-space-md">Lote</th>
+              <th class="py-space-sm px-space-md">Vencimiento</th><th class="py-space-sm px-space-md">Ubicación</th>
+              <th class="py-space-sm px-space-md text-center">WH</th><th class="py-space-sm px-space-md text-right">Cantidad</th><th class="py-space-sm px-space-md">Fecha</th>
+            </tr></thead>
+            <tbody id="detail-body" class="divide-y divide-surface-container font-body-sm"></tbody>
+          </table>
+        </div>
+        <div class="p-space-md bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm text-on-surface-variant font-label-sm">
+          <span id="page-info"></span>
+          <div class="flex items-center gap-1">
+            <button id="prev" class="px-2 py-0.5 rounded bg-surface-container-lowest hover:bg-surface-container disabled:opacity-40">‹ Anterior</button>
+            <span id="page-num" class="px-2 py-0.5 rounded bg-primary-container text-on-primary font-bold">1</span>
+            <button id="next" class="px-2 py-0.5 rounded bg-surface-container-lowest hover:bg-surface-container disabled:opacity-40">Siguiente ›</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráficos -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+        <div class="lg:col-span-7 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+          <span class="font-label-sm text-secondary uppercase tracking-wider">Análisis comparativo</span>
+          <h3 class="font-headline-md mb-space-md">Unidades recolectadas por OT</h3>
+          <div id="chart-ot" class="flex flex-col gap-space-md"></div>
+        </div>
+        <div class="lg:col-span-5 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+          <span class="font-label-sm text-secondary uppercase tracking-wider">Capacidad</span>
+          <h3 class="font-headline-md mb-space-md">Distribución por Almacén</h3>
+          <div id="chart-wh" class="flex flex-col gap-space-sm"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============ CONFIGURACIÓN ============ */
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTWZmOGgm12KMMC7h3WNApewPJ5s83--mMAV-7K9-J3Jm2vV7TiP5j5fYuf21L7iSS6iHfiLAmL2a2G/pub?gid=829291771&single=true&output=csv";
+const REFRESH_MS = 5 * 60 * 1000;   // auto-actualizar cada 5 min
+const PAGE_SIZE  = 25;
+// Metas opcionales (unidades solicitadas por OT) para mostrar % de avance. Ej: { OT033: 5000, OT030: 7530 }
+const TARGETS = {};
+
+/* Nombres de columna (sin espacios/símbolos, mayúsculas). Se buscan exacto y luego "empieza con". */
+const COLS = {
+  id:['IDDETAL'], ot:['ORDER'], cliente:['CUSTOMERNAME'], fecha:['TRANSACTIONDATE'],
+  item:['ITEMNUMBER'], desc:['ITEMDESCRIPTION'], ean:['CODIGOEAN13','EAN13'], wh:['WH'],
+  lote:['LOTNUMBER'], venc:['LOTEXPIRATIONDATE'], loc:['LOCTN'], qty:['TRANSQUANTITY','TRANSQTY']
+};
+
+/* ============ UTILIDADES ============ */
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n).toLocaleString('es-PE');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const fmtDate = v => { v=String(v||'').trim(); if(/^\d{8}$/.test(v)) return `${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6)}`; return v; };
+
+function parseCSV(text){
+  const rows=[]; let row=[], f='', q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(f); f=''; }
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(f); rows.push(row); row=[]; f=''; }
+    else f+=c;
+  }
+  if(f!==''||row.length){ row.push(f); rows.push(row); }
+  return rows.filter(r=>r.some(x=>x.trim()!==''));
+}
+function findCol(headers, cands){
+  const H = headers.map(norm);
+  for(const c of cands){ const i=H.indexOf(c); if(i>-1) return i; }
+  for(const c of cands){ const i=H.findIndex(h=>h.startsWith(c)); if(i>-1) return i; }
+  return -1;
+}
+
+/* ============ ESTADO ============ */
+let DATA=[], state={ot:'ALL', date:'ALL', wh:'ALL', q:'', page:1}, lastSync=null;
+
+async function load(){
+  $('sync-text').textContent='Actualizando…';
+  $('error-box').classList.add('hidden');
+  try{
+    const res = await fetch(CSV_URL + '&_=' + Date.now());
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const rows = parseCSV(await res.text());
+    const headers = rows[0];
+    const idx = {}; for(const k in COLS) idx[k]=findCol(headers, COLS[k]);
+    const missing = Object.keys(idx).filter(k=>idx[k]<0 && ['ot','qty'].includes(k));
+    if(missing.length) throw new Error('No encontré las columnas: '+missing.join(', ')+'. Revisa los encabezados del sheet.');
+    DATA = rows.slice(1).map(r=>{
+      const g=k=> idx[k]>-1 ? (r[idx[k]]||'').trim() : '';
+      return { id:g('id'), ot:g('ot'), cliente:g('cliente'), fecha:fmtDate(g('fecha')), item:g('item'),
+        desc:g('desc'), ean:g('ean'), wh:g('wh'), lote:g('lote'), venc:fmtDate(g('venc')), loc:g('loc'),
+        qty: parseFloat(g('qty').replace(/,/g,''))||0 };
+    }).filter(d=>d.ot);
+    lastSync=new Date();
+    $('side-status').textContent='En línea'; $('sync-dot').className='w-2 h-2 rounded-full bg-tertiary-container animate-pulse';
+    buildFilters(); render();
+  }catch(e){
+    $('error-box').textContent='⚠️ No se pudo leer el Google Sheet: '+e.message+' (verifica que esté publicado en la web como CSV).';
+    $('error-box').classList.remove('hidden');
+    $('sync-text').textContent='Error de sincronización'; $('sync-dot').className='w-2 h-2 rounded-full bg-error';
+    $('side-status').textContent='Sin conexión';
+  }
+}
+
+function buildFilters(){
+  const ots=[...new Set(DATA.map(d=>d.ot))].sort();
+  const dates=[...new Set(DATA.map(d=>d.fecha))].sort().reverse();
+  const whs=[...new Set(DATA.map(d=>d.wh).filter(Boolean))].sort();
+  $('filter-ot').innerHTML=`<option value="ALL">Todas las Órdenes (${ots.length})</option>`+ots.map(o=>`<option>${esc(o)}</option>`).join('');
+  $('filter-date').innerHTML=`<option value="ALL">Todas las fechas</option>`+dates.map(o=>`<option>${esc(o)}</option>`).join('');
+  $('filter-ot').value=ots.includes(state.ot)?state.ot:'ALL'; state.ot=$('filter-ot').value;
+  $('filter-date').value=dates.includes(state.date)?state.date:'ALL'; state.date=$('filter-date').value;
+  $('wh-buttons').innerHTML=['ALL',...whs].map(w=>`<button data-wh="${esc(w)}" class="wh-btn px-space-sm py-1 rounded font-label-sm uppercase">${w==='ALL'?'WH: Todos':'WH '+esc(w)}</button>`).join('');
+  document.querySelectorAll('.wh-btn').forEach(b=>b.onclick=()=>{state.wh=b.dataset.wh;state.page=1;render();});
+}
+
+function filtered(includeSearch=true){
+  const q=state.q.toLowerCase();
+  return DATA.filter(d=>(state.ot==='ALL'||d.ot===state.ot)&&(state.date==='ALL'||d.fecha===state.date)&&(state.wh==='ALL'||d.wh===state.wh)
+    &&(!includeSearch||!q||[d.ot,d.ean,d.item,d.desc,d.lote,d.loc,d.id,d.cliente].join(' ').toLowerCase().includes(q)));
+}
+
+/* ============ RENDER ============ */
+function kpi(label,icon,value,sub,extra=''){
+  return `<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+    <div class="flex items-start justify-between"><span class="font-label-sm text-secondary uppercase tracking-wider">${label}</span><span class="material-symbols-outlined text-primary text-[18px]">${icon}</span></div>
+    <div class="my-space-sm"><div class="font-headline-xl tabular-nums">${value}</div><p class="font-body-sm text-on-surface-variant mt-0.5">${sub}</p></div>${extra}</div>`;
+}
+const bar=(pct,cls='bg-primary-container')=>`<div class="w-full bg-surface-container rounded-full h-1.5 overflow-hidden"><div class="${cls} h-full rounded-full" style="width:${Math.min(100,pct)}%"></div></div>`;
+
+function render(){
+  const all=filtered(false), rows=filtered(true);
+  document.querySelectorAll('.wh-btn').forEach(b=>{const on=b.dataset.wh===state.wh;
+    b.className='wh-btn px-space-sm py-1 rounded font-label-sm uppercase '+(on?'bg-primary-container text-on-primary':'text-on-surface-variant hover:bg-surface-container-high');});
+
+  const units=all.reduce((s,d)=>s+d.qty,0);
+  const ots=[...new Set(all.map(d=>d.ot))];
+  const skus=new Set(all.map(d=>d.item||d.ean)).size;
+  const lotes=new Set(all.map(d=>d.lote)).size;
+  const locs=new Set(all.map(d=>d.loc)).size;
+  const dates=[...new Set(all.map(d=>d.fecha))].sort();
+  const targetSum=ots.reduce((s,o)=>s+(TARGETS[o]||0),0);
+  const hasT = targetSum>0 && ots.every(o=>TARGETS[o]);
+
+  $('kpis').innerHTML=[
+    kpi('Unidades Recolectadas','output',fmt(units), hasT?`de ${fmt(targetSum)} solicitadas`:'unidades en transacciones', hasT?bar(units/targetSum*100):''),
+    kpi('Órdenes (OT)','assignment',ots.length, ots.slice(0,4).join(' · ')||'—'),
+    kpi('SKUs Únicos','barcode_scanner',fmt(skus),'códigos en movimiento'),
+    kpi('Lotes Únicos','fact_check',fmt(lotes),'lotes trazados'),
+    kpi('Ubicaciones','warehouse',fmt(locs),`${fmt(all.length)} transacciones`)
+  ].join('');
+
+  $('top-ots').textContent=ots.length+' OTs'; 
+  $('top-date').textContent=dates.length?(dates[0]===dates[dates.length-1]?dates[0]:dates[0]+' → '+dates[dates.length-1]):'—';
+  $('filter-summary').innerHTML=`Mostrando <strong class="text-on-surface">${ots.length} OTs</strong> | ${fmt(units)} uds`;
+  $('sync-text').textContent='Sincronizado: '+(lastSync?lastSync.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'—');
+
+  // Tabla por OT
+  const by={}; all.forEach(d=>{(by[d.ot]=by[d.ot]||{ot:d.ot,cliente:d.cliente,wh:new Set(),skus:new Set(),lotes:new Set(),n:0,u:0,f:''});
+    const o=by[d.ot]; o.wh.add(d.wh); o.skus.add(d.item||d.ean); o.lotes.add(d.lote); o.n++; o.u+=d.qty; if(d.fecha>o.f)o.f=d.fecha;});
+  const list=Object.values(by).sort((a,b)=>a.ot.localeCompare(b.ot));
+  const maxU=Math.max(1,...list.map(o=>o.u));
+  $('ot-body').innerHTML=list.map(o=>{const t=TARGETS[o.ot]; const pct=t?o.u/t*100:o.u/maxU*100;
+    return `<tr class="hover:bg-surface-container-low/60"><td class="py-space-md px-space-md"><div class="font-bold text-primary text-[15px]">${esc(o.ot)}</div><div class="text-on-surface-variant font-label-sm">${esc(o.cliente)}</div></td>
+    <td class="py-space-md px-space-md"><span class="px-2 py-0.5 rounded bg-secondary text-on-secondary font-label-sm font-semibold">${[...o.wh].filter(Boolean).map(esc).join(', ')||'—'}</span></td>
+    <td class="py-space-md px-space-md text-right font-mono">${fmt(o.skus.size)}</td><td class="py-space-md px-space-md text-right font-mono">${fmt(o.lotes.size)}</td>
+    <td class="py-space-md px-space-md text-right font-mono">${fmt(o.n)}</td>
+    <td class="py-space-md px-space-md"><div class="flex justify-between font-mono font-bold text-primary mb-1"><span>${fmt(o.u)} uds${t?' / '+fmt(t):''}</span>${t?`<span>${pct.toFixed(1)}%</span>`:''}</div>${bar(pct)}</td>
+    <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(o.f)}</td></tr>`;}).join('')||`<tr><td colspan="7" class="p-space-lg text-center text-on-surface-variant">Sin datos</td></tr>`;
+
+  // Detalle paginado
+  $('row-count').textContent=fmt(rows.length)+' registros';
+  const pages=Math.max(1,Math.ceil(rows.length/PAGE_SIZE)); if(state.page>pages)state.page=pages;
+  const s=(state.page-1)*PAGE_SIZE, slice=rows.slice(s,s+PAGE_SIZE);
+  $('detail-body').innerHTML=slice.map(d=>`<tr class="hover:bg-surface-container-low/60">
+    <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(d.id)}</td>
+    <td class="py-space-md px-space-md font-semibold text-primary">${esc(d.ot)}</td>
+    <td class="py-space-md px-space-md font-mono text-secondary">${esc(d.ean)}</td>
+    <td class="py-space-md px-space-md"><div class="font-semibold">${esc(d.desc)}</div><div class="text-on-surface-variant font-label-sm font-mono">${esc(d.item)}</div></td>
+    <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(d.lote)}</td>
+    <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(d.venc)}</td>
+    <td class="py-space-md px-space-md"><span class="px-2 py-0.5 rounded bg-surface-container font-mono font-bold">${esc(d.loc)}</span></td>
+    <td class="py-space-md px-space-md text-center font-mono">${esc(d.wh)}</td>
+    <td class="py-space-md px-space-md text-right font-mono font-semibold">${fmt(d.qty)}</td>
+    <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(d.fecha)}</td></tr>`).join('')||`<tr><td colspan="10" class="p-space-lg text-center text-on-surface-variant">Sin resultados</td></tr>`;
+  $('page-info').innerHTML=rows.length?`Mostrando <strong>${s+1} - ${Math.min(s+PAGE_SIZE,rows.length)}</strong> de ${fmt(rows.length)} registros`:'0 registros';
+  $('page-num').textContent=state.page+' / '+pages; $('prev').disabled=state.page<=1; $('next').disabled=state.page>=pages;
+
+  // Gráfico por OT
+  const colors=['bg-primary-container','bg-tertiary-container','bg-secondary'];
+  $('chart-ot').innerHTML=list.map((o,i)=>`<div class="flex flex-col gap-1"><div class="flex justify-between font-label-sm"><span class="font-bold">${esc(o.ot)}</span><span class="font-mono font-bold">${fmt(o.u)} uds</span></div>
+    <div class="w-full bg-surface-container rounded-full h-3 overflow-hidden"><div class="${colors[i%3]} h-full rounded-full transition-all duration-500" style="width:${o.u/maxU*100}%"></div></div></div>`).join('')||'<p class="text-on-surface-variant">Sin datos</p>';
+
+  // Gráfico por WH
+  const w={}; all.forEach(d=>{const k=d.wh||'—'; w[k]=(w[k]||0)+d.qty;});
+  const wc=['bg-primary-container','bg-secondary','bg-tertiary-container'];
+  const ent=Object.entries(w).sort((a,b)=>b[1]-a[1]);
+  $('chart-wh').innerHTML=`<div class="w-full bg-surface-container rounded-full h-3 flex overflow-hidden mb-space-sm">${ent.map(([k,v],i)=>`<div class="${wc[i%3]} h-full" style="width:${units?v/units*100:0}%"></div>`).join('')}</div>`+
+    ent.map(([k,v],i)=>`<div class="flex items-center justify-between font-label-sm"><div class="flex items-center gap-space-xs"><span class="w-3 h-3 rounded-full ${wc[i%3]}"></span><span class="font-bold">Planta ${esc(k)} (${units?(v/units*100).toFixed(1):0}%)</span></div><span class="font-mono text-on-surface-variant">${fmt(v)} uds</span></div>`).join('');
+}
+
+/* ============ EVENTOS ============ */
+$('filter-ot').onchange=e=>{state.ot=e.target.value;state.page=1;render();};
+$('filter-date').onchange=e=>{state.date=e.target.value;state.page=1;render();};
+$('table-search').oninput=e=>{state.q=e.target.value;$('global-search').value=e.target.value;state.page=1;render();};
+$('global-search').oninput=e=>{state.q=e.target.value;$('table-search').value=e.target.value;state.page=1;render();};
+$('prev').onclick=()=>{state.page--;render();}; $('next').onclick=()=>{state.page++;render();};
+$('btn-refresh').onclick=load;
+$('btn-csv').onclick=()=>{
+  const rows=filtered(true), h=['ID','OT','EAN','Item','Descripcion','Lote','Vencimiento','Ubicacion','WH','Cantidad','Fecha'];
+  const csv=[h,...rows.map(d=>[d.id,d.ot,d.ean,d.item,d.desc,d.lote,d.venc,d.loc,d.wh,d.qty,d.fecha])].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'})); a.download='detalle_ot.csv'; a.click();
+};
+
+load(); setInterval(load, REFRESH_MS);
+</script>
+</body>
+</html>
