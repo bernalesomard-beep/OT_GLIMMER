@@ -12,6 +12,11 @@
 .dual input[type=range]::-moz-range-track{background:transparent}
 .dual input[type=range]::-webkit-slider-thumb{pointer-events:auto;-webkit-appearance:none;width:20px;height:20px;margin-top:4px;border-radius:50%;background:#1d4ed8;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:grab}
 .dual input[type=range]::-moz-range-thumb{pointer-events:auto;width:14px;height:14px;border-radius:50%;background:#1d4ed8;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:grab}
+.vscroll{max-height:356px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#9db3e6 #e5eeff}
+.vscroll::-webkit-scrollbar{display:block;width:10px;height:10px}
+.vscroll::-webkit-scrollbar-thumb{background:#9db3e6;border-radius:6px}
+.vscroll::-webkit-scrollbar-track{background:#e5eeff}
+.vscroll thead th{position:sticky;top:0;background:#eff4ff;z-index:2;height:36px}
 </style>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"on-tertiary":"#ffffff","surface-container-low":"#eff4ff","outline-variant":"#c4c5d7","outline":"#747686","surface-container-highest":"#d3e4fe","tertiary-container":"#006948","secondary-container":"#dae2fd","on-secondary":"#ffffff","primary":"#0037b0","tertiary":"#004f35","error":"#ba1a1a","surface-container-lowest":"#ffffff","surface-container-high":"#dce9ff","surface":"#f8f9ff","on-primary":"#ffffff","tertiary-fixed":"#85f8c4","primary-fixed":"#dce1ff","primary-container":"#1d4ed8","on-surface":"#0b1c30","on-primary-fixed":"#001551","secondary-fixed":"#dae2fd","on-secondary-fixed":"#131b2e","on-surface-variant":"#434655","background":"#f8f9ff","surface-container":"#e5eeff","secondary":"#565e74"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"gutter-lg":"1.5rem","margin-sm":"1rem","space-md":"0.75rem","space-xl":"1.5rem","gutter":"1rem","margin-lg":"2rem","space-xs":"0.25rem","margin":"1.5rem","space-sm":"0.5rem","space-lg":"1rem"},"fontFamily":{"label-md":["Inter"],"body-md":["Inter"],"body-sm":["Inter"],"label-sm":["Inter"],"label-lg":["Inter"],"headline-xl":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"]},"fontSize":{"label-md":["11px",{"lineHeight":"16px","letterSpacing":"0.025em","fontWeight":"600"}],"body-md":["13px",{"lineHeight":"18px","fontWeight":"400"}],"label-sm":["10px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"700"}],"label-lg":["13px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"600"}],"headline-xl":["30px",{"lineHeight":"38px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-md":["18px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}]}}}}</script>
@@ -23,9 +28,9 @@
 <aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between py-margin-sm">
   <div class="flex flex-col gap-space-lg">
     <nav class="flex flex-col gap-space-xs px-space-md pt-space-lg">
-      <a class="flex items-center gap-space-sm px-space-md py-space-sm bg-primary-container text-on-primary font-label-lg text-label-lg rounded-xl shadow-sm" href="#"><span class="material-symbols-outlined text-[20px]">dashboard</span><span>Tablero de Control</span></a>
-      <a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high" href="#detalle"><span class="material-symbols-outlined text-[20px]">inventory_2</span><span>Detalle por Lote y Ubicación</span></a>
-      <a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high" href="#historico"><span class="material-symbols-outlined text-[20px]">history</span><span>Histórico OT</span></a>
+      <button data-nav="dash" class="nav-btn w-full text-left flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg"><span class="material-symbols-outlined text-[20px]">dashboard</span><span>Tablero de Control</span></button>
+      <button data-nav="detalle" class="nav-btn w-full text-left flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg"><span class="material-symbols-outlined text-[20px]">inventory_2</span><span>Detalle por Lote y Ubicación</span></button>
+      <button data-nav="hist" class="nav-btn w-full text-left flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg"><span class="material-symbols-outlined text-[20px]">history</span><span>Histórico OT</span></button>
     </nav>
   </div>
   <div class="px-space-md">
@@ -56,7 +61,7 @@
     <div class="flex flex-col w-full gap-space-lg">
 
       <!-- Encabezado -->
-      <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
+      <div id="page-head" class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
         <div class="flex flex-col gap-space-xs">
           <span class="inline-flex w-fit items-center px-space-xs py-0.5 rounded bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-wider">Mando Operativo WMS</span>
           <h1 class="font-headline-xl text-headline-xl tracking-tight">Control Ejecutivo de Órdenes de Trabajo (OT)</h1>
@@ -73,6 +78,7 @@
 
       <div id="error-box" class="hidden bg-error-container bg-red-100 text-error p-space-md rounded-xl font-body-md text-body-md"></div>
 
+      <div id="view-dash" class="flex flex-col gap-space-lg">
       <!-- Filtros -->
       <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-space-md">
         <div class="flex flex-wrap items-center gap-space-sm">
@@ -89,68 +95,35 @@
 
       <!-- Desglose por OT -->
       <div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col gap-space-md" id="analisis">
-        <div>
-          <h2 class="font-headline-md text-headline-md flex items-center gap-space-xs"><span class="material-symbols-outlined text-primary text-[22px]">assignment</span>Desglose por Orden de Trabajo</h2>
-          <p class="font-body-sm text-body-sm text-on-surface-variant">Cruce de lo solicitado (TRANS QUANTITY) contra lo pendiente (SALDO) por orden.</p>
+        <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-space-md">
+          <div>
+            <h2 class="font-headline-md text-headline-md flex items-center gap-space-xs"><span class="material-symbols-outlined text-primary text-[22px]">assignment</span>Desglose por Orden de Trabajo
+              <span id="d-count" class="px-2 py-0.5 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-bold">0</span></h2>
+            <p class="font-body-sm text-body-sm text-on-surface-variant">Cruce de lo solicitado (TRANS QUANTITY) contra lo pendiente (SALDO). Se muestran 5 órdenes; usa la barra vertical para ver el resto.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-space-sm">
+            <select id="d-ot" class="bg-surface-container-low pl-3 pr-3 py-1.5 rounded font-label-md text-label-md focus:outline-none cursor-pointer"></select>
+            <label class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">Desde <input type="date" id="d-from" class="bg-surface-container-low rounded px-2 py-1 font-label-md text-label-md text-on-surface focus:outline-none"></label>
+            <label class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">Hasta <input type="date" id="d-to" class="bg-surface-container-low rounded px-2 py-1 font-label-md text-label-md text-on-surface focus:outline-none"></label>
+            <button id="d-clear" class="px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md">Limpiar</button>
+          </div>
         </div>
-        <div class="overflow-x-auto rounded-xl border border-surface-container">
+        <div class="vscroll rounded-xl border border-surface-container">
           <table class="w-full text-left border-collapse">
             <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
-              <th class="py-space-sm px-space-md">Orden (OT)</th><th class="py-space-sm px-space-md">Almacén</th>
-              <th class="py-space-sm px-space-md text-right">SKUs</th><th class="py-space-sm px-space-md text-right">Líneas completas</th>
-              <th class="py-space-sm px-space-md text-right">Solicitado</th><th class="py-space-sm px-space-md text-right">Recolectado</th>
-              <th class="py-space-sm px-space-md text-right">Pendiente</th>
-              <th class="py-space-sm px-space-md min-w-[200px]">Avance</th>
+              <th class="px-space-md">Orden (OT)</th><th class="px-space-md">Almacén</th>
+              <th class="px-space-md text-right">SKUs</th><th class="px-space-md text-right">Líneas completas</th>
+              <th class="px-space-md text-right">Solicitado</th><th class="px-space-md text-right">Recolectado</th>
+              <th class="px-space-md text-right">Pendiente</th>
+              <th class="px-space-md min-w-[200px]">Avance</th>
             </tr></thead>
             <tbody id="ot-body" class="divide-y divide-surface-container font-body-sm text-body-sm bg-surface-container-lowest"></tbody>
           </table>
         </div>
       </div>
 
-      <!-- Histórico OT -->
-      <div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col gap-space-md" id="historico">
-        <div class="flex flex-col md:flex-row md:items-start justify-between gap-space-md">
-          <div>
-            <h2 class="font-headline-md text-headline-md flex items-center gap-space-xs"><span class="material-symbols-outlined text-primary text-[22px]">history</span>Histórico de OT</h2>
-            <p class="font-body-sm text-body-sm text-on-surface-variant max-w-2xl">Unidades trabajadas por fecha según <strong>FECHA MOV</strong>. Mueve el slider para elegir el rango; cada OT muestra su fecha inicial y final de movimiento.</p>
-          </div>
-          <div class="flex flex-wrap items-center gap-space-sm">
-            <button id="hist-all" class="px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md">Todo el período</button>
-            <button id="hist-xls" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">file_download</span>Excel (.xls)</button>
-          </div>
-        </div>
-        <div id="hist-warn" class="hidden p-space-sm rounded bg-error-container bg-red-100 text-error font-body-sm text-body-sm"></div>
-        <div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-sm">
-          <div class="flex flex-wrap items-center justify-between gap-space-sm font-label-md text-label-md">
-            <span class="text-on-surface-variant uppercase font-label-sm text-label-sm">Unidades trabajadas por día</span>
-            <span id="hist-range-lbl" class="font-bold text-primary"></span>
-            <span id="hist-total-lbl" class="text-on-surface-variant"></span>
-          </div>
-          <div id="hist-chart" class="flex items-end gap-[2px] h-24 border-b border-outline-variant"></div>
-          <div class="dual" id="hist-slider">
-            <div class="absolute left-0 right-0 top-[12px] h-1 rounded bg-surface-container-highest"></div>
-            <div id="hist-fill" class="absolute top-[12px] h-1 rounded bg-primary-container"></div>
-            <input type="range" id="hist-from" min="0" max="0" value="0" step="1">
-            <input type="range" id="hist-to" min="0" max="0" value="0" step="1">
-          </div>
-          <div class="flex justify-between font-label-sm text-label-sm text-on-surface-variant"><span id="hist-min-lbl">—</span><span id="hist-max-lbl">—</span></div>
-        </div>
-        <div class="overflow-x-auto rounded-xl border border-surface-container">
-          <table class="w-full text-left border-collapse">
-            <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
-              <th class="py-space-sm px-space-md">Orden de Trabajo (OT)</th><th class="py-space-sm px-space-md">Almacén</th>
-              <th class="py-space-sm px-space-md min-w-[200px]">Códigos trabajados / totales</th>
-              <th class="py-space-sm px-space-md min-w-[240px]">Unidades trabajadas / solicitadas</th>
-              <th class="py-space-sm px-space-md text-center">Estado</th>
-              <th class="py-space-sm px-space-md text-right">Fecha inicial</th><th class="py-space-sm px-space-md text-right">Fecha final</th>
-            </tr></thead>
-            <tbody id="hist-body" class="divide-y divide-surface-container font-body-sm text-body-sm bg-surface-container-lowest"></tbody>
-          </table>
-        </div>
-      </div>
-
       <!-- Detalle -->
-      <div class="bg-surface-container-lowest rounded-xl shadow-sm flex flex-col overflow-hidden" id="detalle">
+      <div class="bg-surface-container-lowest rounded-xl shadow-sm flex flex-col overflow-hidden scroll-mt-20" id="detalle">
         <div class="p-space-lg flex flex-col md:flex-row md:items-center justify-between gap-space-md">
           <div>
             <h3 class="font-headline-md text-headline-md flex items-center gap-space-xs">Detalle Operativo por Ítem, Lote y Ubicación
@@ -204,6 +177,59 @@
         </div>
       </div>
 
+      </div><!-- /view-dash -->
+
+      <div id="view-hist" style="display:none" class="flex flex-col gap-space-lg">
+      <!-- Histórico OT -->
+      <div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col gap-space-md" id="historico">
+        <div class="flex flex-col md:flex-row md:items-start justify-between gap-space-md">
+          <div>
+            <h2 class="font-headline-md text-headline-md flex items-center gap-space-xs"><span class="material-symbols-outlined text-primary text-[22px]">history</span>Histórico de OT</h2>
+            <p class="font-body-sm text-body-sm text-on-surface-variant max-w-2xl">Unidades trabajadas por fecha según <strong>FECHA MOV</strong>. Mueve el slider para elegir el rango; cada OT muestra su fecha inicial y final de movimiento.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-space-sm">
+            <button id="hist-refresh" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">sync</span>Actualizar</button>
+            <button id="hist-all" class="px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md">Todo el período</button>
+            <button id="hist-xls" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">file_download</span>Excel (.xls)</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-space-sm bg-surface-container-low rounded-xl p-space-md">
+          <div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm uppercase"><span class="material-symbols-outlined text-[18px]">date_range</span>Rango de fechas (FECHA MOV):</div>
+          <label class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">Desde <input type="date" id="hist-d-from" class="bg-surface-container-lowest rounded px-2 py-1 font-label-md text-label-md text-on-surface focus:outline-none"></label>
+          <label class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">Hasta <input type="date" id="hist-d-to" class="bg-surface-container-lowest rounded px-2 py-1 font-label-md text-label-md text-on-surface focus:outline-none"></label>
+        </div>
+        <div id="hist-warn" class="hidden p-space-sm rounded bg-error-container bg-red-100 text-error font-body-sm text-body-sm"></div>
+        <div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-sm">
+          <div class="flex flex-wrap items-center justify-between gap-space-sm font-label-md text-label-md">
+            <span class="text-on-surface-variant uppercase font-label-sm text-label-sm">Unidades trabajadas por día</span>
+            <span id="hist-range-lbl" class="font-bold text-primary"></span>
+            <span id="hist-total-lbl" class="text-on-surface-variant"></span>
+          </div>
+          <div id="hist-chart" class="flex items-end gap-[2px] h-24 border-b border-outline-variant"></div>
+          <div class="dual" id="hist-slider">
+            <div class="absolute left-0 right-0 top-[12px] h-1 rounded bg-surface-container-highest"></div>
+            <div id="hist-fill" class="absolute top-[12px] h-1 rounded bg-primary-container"></div>
+            <input type="range" id="hist-from" min="0" max="0" value="0" step="1">
+            <input type="range" id="hist-to" min="0" max="0" value="0" step="1">
+          </div>
+          <div class="flex justify-between font-label-sm text-label-sm text-on-surface-variant"><span id="hist-min-lbl">—</span><span id="hist-max-lbl">—</span></div>
+        </div>
+        <div class="overflow-x-auto rounded-xl border border-surface-container">
+          <table class="w-full text-left border-collapse">
+            <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+              <th class="py-space-sm px-space-md">Orden de Trabajo (OT)</th><th class="py-space-sm px-space-md">Almacén</th>
+              <th class="py-space-sm px-space-md min-w-[200px]">Códigos trabajados / totales</th>
+              <th class="py-space-sm px-space-md min-w-[240px]">Unidades trabajadas / solicitadas</th>
+              <th class="py-space-sm px-space-md text-center">Estado</th>
+              <th class="py-space-sm px-space-md text-right">Fecha inicial</th><th class="py-space-sm px-space-md text-right">Fecha final</th>
+            </tr></thead>
+            <tbody id="hist-body" class="divide-y divide-surface-container font-body-sm text-body-sm bg-surface-container-lowest"></tbody>
+          </table>
+        </div>
+      </div>
+
+      
+      </div><!-- /view-hist -->
     </div>
   </main>
 </div>
@@ -301,6 +327,9 @@ function buildFilters(){
   const whs=[...new Set(DATA.map(d=>d.wh).filter(Boolean))].sort();
   $('filter-ot').innerHTML=`<option value="ALL">Todas las Órdenes (${ots.length})</option>`+ots.map(o=>`<option>${esc(o)}</option>`).join('');
   $('filter-date').innerHTML=`<option value="ALL">Todas las fechas</option>`+dates.map(o=>`<option>${esc(o)}</option>`).join('');
+  $('d-ot').innerHTML=`<option value="ALL">Todas las OT (${ots.length})</option>`+ots.map(o=>`<option>${esc(o)}</option>`).join('');
+  $('d-ot').value=ots.includes(dState.ot)?dState.ot:'ALL'; dState.ot=$('d-ot').value;
+  const vd=dates.filter(Boolean); ['d-from','d-to'].forEach(id=>{ $(id).min=vd[vd.length-1]||''; $(id).max=vd[0]||''; });
   $('filter-ot').value=ots.includes(state.ot)?state.ot:'ALL'; state.ot=$('filter-ot').value;
   $('filter-date').value=dates.includes(state.date)?state.date:'ALL'; state.date=$('filter-date').value;
   $('wh-buttons').innerHTML=['ALL',...whs].map(w=>`<button data-wh="${esc(w)}" class="wh-btn px-space-sm py-1 rounded font-label-sm text-label-sm uppercase">${w==='ALL'?'WH: Todos':'WH '+esc(w)}</button>`).join('');
@@ -311,6 +340,20 @@ function filtered(includeSearch=true){
   const q=state.q.toLowerCase();
   return DATA.filter(d=>(state.ot==='ALL'||d.ot===state.ot)&&(state.date==='ALL'||d.fecha===state.date)&&(state.wh==='ALL'||d.wh===state.wh)
     &&(!includeSearch||!q||[d.ot,d.ean,d.item,d.desc,d.lote,d.loc,d.cliente].join(' ').toLowerCase().includes(q)));
+}
+
+/* ============ DESGLOSE (filtros propios) ============ */
+const dState={ot:'ALL',from:'',to:''};
+function desgloseList(){
+  const by={};
+  DATA.forEach(d=>{
+    if(dState.ot!=='ALL' && d.ot!==dState.ot) return;
+    if(dState.from && (!d.fecha || d.fecha<dState.from)) return;     // TRANSACTION DATE (yyyymmdd → yyyy-mm-dd)
+    if(dState.to && (!d.fecha || d.fecha>dState.to)) return;
+    const o=(by[d.ot]=by[d.ot]||{ot:d.ot,cliente:d.cliente,wh:new Set(),skus:new Set(),lines:0,full:0,req:0,pend:0});
+    o.wh.add(d.wh); o.skus.add(d.item||d.ean); o.lines++; if(d.pend<=0)o.full++; o.req+=d.qty; o.pend+=d.pend;
+  });
+  return Object.values(by).sort((a,b)=>a.ot.localeCompare(b.ot));
 }
 
 /* ============ RENDER ============ */
@@ -351,15 +394,15 @@ function render(){
   const by={}; all.forEach(d=>{const o=(by[d.ot]=by[d.ot]||{ot:d.ot,cliente:d.cliente,wh:new Set(),skus:new Set(),lines:0,full:0,req:0,pend:0});
     o.wh.add(d.wh); o.skus.add(d.item||d.ean); o.lines++; if(d.pend<=0)o.full++; o.req+=d.qty; o.pend+=d.pend;});
   const list=Object.values(by).sort((a,b)=>a.ot.localeCompare(b.ot));
-  $('ot-body').innerHTML=list.map(o=>{const dn=Math.max(0,o.req-o.pend), p=pct(dn,o.req);
-    return `<tr class="hover:bg-surface-container-low/60"><td class="py-space-md px-space-md"><div class="font-bold text-primary text-[15px]">${esc(o.ot)}</div><div class="text-on-surface-variant font-label-sm text-label-sm">${esc(o.cliente)}</div></td>
+  const dl=desgloseList(); $('d-count').textContent=dl.length+(dl.length===1?' orden':' órdenes'); $('ot-body').innerHTML=dl.map(o=>{const dn=Math.max(0,o.req-o.pend), p=pct(dn,o.req);
+    return `<tr class="hover:bg-surface-container-low/60 h-16"><td class="py-space-md px-space-md"><div class="font-bold text-primary text-[15px]">${esc(o.ot)}</div><div class="text-on-surface-variant font-label-sm text-label-sm">${esc(o.cliente)}</div></td>
     <td class="py-space-md px-space-md"><span class="px-2 py-0.5 rounded bg-secondary text-on-secondary font-label-sm text-label-sm font-semibold">${[...o.wh].filter(Boolean).map(esc).join(', ')||'—'}</span></td>
     <td class="py-space-md px-space-md text-right font-mono">${fmt(o.skus.size)}</td>
     <td class="py-space-md px-space-md text-right font-mono">${fmt(o.full)} / ${fmt(o.lines)}</td>
     <td class="py-space-md px-space-md text-right font-mono font-semibold">${fmt(o.req)}</td>
     <td class="py-space-md px-space-md text-right font-mono font-semibold text-tertiary">${fmt(dn)}</td>
     <td class="py-space-md px-space-md text-right font-mono font-semibold ${o.pend>0?'text-error':'text-on-surface-variant'}">${fmt(o.pend)}</td>
-    <td class="py-space-md px-space-md"><div class="flex justify-end font-mono font-bold text-primary mb-1">${p.toFixed(1)}%</div>${bar(p)}</td></tr>`;}).join('')||`<tr><td colspan="8" class="p-space-lg text-center text-on-surface-variant">Sin datos</td></tr>`;
+    <td class="py-space-md px-space-md"><div class="flex justify-end font-mono font-bold text-primary mb-1">${p.toFixed(1)}%</div>${bar(p)}</td></tr>`;}).join('')||`<tr><td colspan="8" class="h-16 text-center text-on-surface-variant">Sin datos para ese filtro</td></tr>`;
 
   // Detalle
   $('row-count').textContent=fmt(rows.length)+' registros';
@@ -441,6 +484,7 @@ function renderHist(){
   const fromDay=HDAYS[a]||'', toDay=HDAYS[b]||'';
   hSel={from:fromDay,to:toDay};
   const pos=i=> n>1 ? i/(n-1)*100 : 0, fill=$('hist-fill');
+  const df=$('hist-d-from'), dt=$('hist-d-to'); df.min=dt.min=HDAYS[0]||''; df.max=dt.max=HDAYS[n-1]||''; if(document.activeElement!==df) df.value=HDAYS[a]||''; if(document.activeElement!==dt) dt.value=HDAYS[b]||'';
   fill.style.left=pos(a)+'%'; fill.style.width=(pos(b)-pos(a))+'%';
   $('hist-min-lbl').textContent=HDAYS[0]||'—'; $('hist-max-lbl').textContent=HDAYS[n-1]||'—';
 
@@ -507,7 +551,25 @@ $('detail-body').addEventListener('change',e=>{ if(e.target.classList.contains('
 $('hist-from').oninput=()=>{ if(+$('hist-from').value>+$('hist-to').value) $('hist-to').value=$('hist-from').value; renderHist(); };
 $('hist-to').oninput=()=>{ if(+$('hist-to').value<+$('hist-from').value) $('hist-from').value=$('hist-to').value; renderHist(); };
 $('hist-all').onclick=()=>{ $('hist-from').value=0; $('hist-to').value=Math.max(0,HDAYS.length-1); renderHist(); };
-$('hist-xls').onclick=exportHist;
+$('hist-xls').onclick=exportHist; $('hist-refresh').onclick=load;
+$('hist-d-from').onchange=e=>{ const v=e.target.value; let i=v?HDAYS.findIndex(d=>d>=v):0; if(i<0)i=Math.max(0,HDAYS.length-1); $('hist-from').value=i; if(+$('hist-to').value<i)$('hist-to').value=i; renderHist(); };
+$('hist-d-to').onchange=e=>{ const v=e.target.value; let i=HDAYS.length-1; if(v){ i=HDAYS.map(d=>d<=v).lastIndexOf(true); if(i<0)i=0; } $('hist-to').value=i; if(+$('hist-from').value>i)$('hist-from').value=i; renderHist(); };
+$('d-ot').onchange=e=>{dState.ot=e.target.value;render();};
+$('d-from').onchange=e=>{dState.from=e.target.value;render();};
+$('d-to').onchange=e=>{dState.to=e.target.value;render();};
+$('d-clear').onclick=()=>{dState.ot='ALL';dState.from='';dState.to='';$('d-ot').value='ALL';$('d-from').value='';$('d-to').value='';render();};
+
+function showView(v){
+  const dash = v!=='hist';
+  $('view-dash').style.display = dash?'':'none'; $('page-head').style.display = dash?'':'none'; $('view-hist').style.display = dash?'none':'';
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    const on = (v==='hist'&&b.dataset.nav==='hist')||(v==='dash'&&b.dataset.nav==='dash')||(v==='detalle'&&b.dataset.nav==='detalle');
+    b.className='nav-btn w-full text-left flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg '+(on?'bg-primary-container text-on-primary shadow-sm':'text-on-surface-variant hover:bg-surface-container-high');
+  });
+  if(v==='detalle') $('detalle').scrollIntoView({behavior:'smooth'}); else window.scrollTo({top:0});
+}
+document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>showView(b.dataset.nav));
+showView('dash');
 
 load(); setInterval(load, REFRESH_MS);
 </script>
