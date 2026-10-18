@@ -91,8 +91,9 @@
       <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-space-md">
         <div class="flex flex-wrap items-center gap-space-sm">
           <div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm uppercase"><span class="material-symbols-outlined text-[18px]">filter_alt</span>Filtros:</div>
-          <select id="filter-ot" class="bg-surface-container-low pl-3 pr-3 py-1.5 rounded font-label-md text-label-md focus:outline-none cursor-pointer"></select>
-          <select id="filter-date" class="bg-surface-container-low pl-3 pr-3 py-1.5 rounded font-label-md text-label-md focus:outline-none cursor-pointer"></select>
+          <div class="relative" id="ms-f-ot"></div>
+          <label class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">Desde <input type="date" id="f-from" class="bg-surface-container-low rounded px-2 py-1 font-label-md text-label-md text-on-surface focus:outline-none"></label>
+          <label class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">Hasta <input type="date" id="f-to" class="bg-surface-container-low rounded px-2 py-1 font-label-md text-label-md text-on-surface focus:outline-none"></label>
           <div id="wh-buttons" class="flex items-center bg-surface-container-low p-0.5 rounded"></div>
         </div>
         <div class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-space-sm"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span><span id="filter-summary"></span></div>
@@ -246,6 +247,8 @@
 <script>
 /* ============ CONFIGURACIÓN ============ */
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTWZmOGgm12KMMC7h3WNApewPJ5s83--mMAV-7K9-J3Jm2vV7TiP5j5fYuf21L7iSS6iHfiLAmL2a2G/pub?gid=829291771&single=true&output=csv";
+// API (Apps Script). Si falla, el tablero usa automáticamente el CSV completo de más abajo.
+const API_URL = "https://script.google.com/macros/s/AKfycbxnedXyF_fA7DI_nVx3peMZ5A9Q2tvS_FGG6Cd8g5s8shtho_-umZIDSicv8z9SjXOc/exec";
 const REFRESH_MS = 5 * 60 * 1000;
 const PAGE_SIZE  = 25;
 
@@ -298,65 +301,161 @@ function parseFM(v){
 }
 const estado = d => d.pend<=0 ? 'Completado' : (d.pend>=d.qty ? 'Pendiente' : 'En proceso');
 
-/* ============ ESTADO ============ */
-let DATA=[], state={ot:'ALL', date:'ALL', wh:'ALL', q:'', page:1}, lastSync=null, selected=new Set();
+/* ============ ESTADO Y DATOS ============ */
+const worked = d => Math.max(0, d.qty - d.pend);
+let MODE='api', FULL=[], RES=[], DRES=null, DIARIO=[], hLoaded=false, DATA=[];
+let state={wh:'ALL', q:'', page:1}, lastSync=null, selected=new Set(), workInit=false, detTok=0, dTok=0, wTimer=null;
+const wState={ots:new Set(),from:'',to:''};          // OT de trabajo (se carga solo su detalle)
+const WORK_KEY='wms_work_ots';
+const hhmm = () => new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+function setSync(t,err){ $('sync-text').textContent=t; $('sync-dot').className='w-2 h-2 rounded-full '+(err?'bg-error':'bg-tertiary-container animate-pulse'); }
+function showErr(m){ const b=$('error-box'); b.textContent=m; b.classList.remove('hidden'); }
+function hideErr(){ $('error-box').classList.add('hidden'); }
 
-async function load(){
-  $('sync-text').textContent='Actualizando…';
-  $('error-box').classList.add('hidden');
+/* ---- API ---- */
+async function api(params){
+  const res = await fetch(API_URL+'?'+new URLSearchParams(params).toString());
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const j = await res.json();
+  if(!j.ok) throw new Error(j.error||'Error en la API');
+  return j;
+}
+const rowsToObjs = j => j.filas.map(f=>{ const o={}; j.columnas.forEach((c,i)=>o[c]=f[i]); return o; });
+const mapRes = o => ({ ot:String(o.ot), cliente:o.cliente||'', wh:o.wh||'', lineas:+o.lineas||0, skus:+o.skus||0, solicitado:+o.solicitado||0,
+  pendiente:+o.pendiente||0, trabajado:+o.trabajado||0, completas:(o.completas==null?null:+o.completas),
+  fecha_ini:fmtDate(o.fecha_ini), fecha_fin:fmtDate(o.fecha_fin), mov_ini:o.mov_ini||'', mov_fin:o.mov_fin||'' });
+const mapDet = o => ({ ot:String(o.ot), cliente:o.cliente||'', fecha:fmtDate(o.fecha), item:o.item||'', desc:o.desc||'', ean:o.ean||'', wh:o.wh||'',
+  lote:o.lote||'', lotec:o.lotec||'', venc:fmtDate(o.venc), loc:o.loc||'', qty:num(o.qty), pend:num(o.saldo), fm:parseFM(o.fm) });
+
+/* ---- Respaldo CSV (modo sin API) ---- */
+async function loadCSV(){
+  const res = await fetch(CSV_URL + '&_=' + Date.now());
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const rows = parseCSV(await res.text()), headers = rows[0];
+  const idx = {}; for(const k in COLS) idx[k]=findCol(headers, COLS[k]);
+  const missing = Object.keys(idx).filter(k=>idx[k]<0 && ['ot','qty','saldo','ean'].includes(k));
+  if(missing.length) throw new Error('No encontré las columnas de: '+missing.join(', ')+'. Revisa los encabezados del sheet.');
+  FULL = rows.slice(1).map(r=>{
+    const g=k=> idx[k]>-1 ? (r[idx[k]]||'').trim() : '';
+    return { ot:g('ot'), cliente:g('cliente'), fecha:fmtDate(g('fecha')), item:g('item'), desc:g('desc'), ean:g('ean'), wh:g('wh'),
+      lote:g('lote'), lotec:g('lotec'), venc:fmtDate(g('venc')), loc:g('loc'), qty:num(g('qty')), pend:num(g('saldo')), fm:parseFM(g('fm')) };
+  }).filter(d=>d.ot);
+}
+function inRange(d, desde, hasta){ return (!desde || (d.fecha && d.fecha>=desde)) && (!hasta || (d.fecha && d.fecha<=hasta)); }
+function deriveRes(rows){
+  const by={};
+  rows.forEach(d=>{ const a=(by[d.ot]=by[d.ot]||{ot:d.ot,cliente:d.cliente,whs:new Set(),sk:new Set(),lineas:0,solicitado:0,pendiente:0,trabajado:0,completas:0,fecha_ini:'',fecha_fin:'',mov_ini:'',mov_fin:''});
+    if(d.wh)a.whs.add(d.wh); a.sk.add(d.item||d.ean); a.lineas++; a.solicitado+=d.qty; a.pendiente+=d.pend; a.trabajado+=worked(d); if(d.pend<=0)a.completas++;
+    if(d.fecha){ if(!a.fecha_ini||d.fecha<a.fecha_ini)a.fecha_ini=d.fecha; if(d.fecha>a.fecha_fin)a.fecha_fin=d.fecha; }
+    if(d.fm){ if(!a.mov_ini||d.fm.txt<a.mov_ini)a.mov_ini=d.fm.txt; if(d.fm.txt>a.mov_fin)a.mov_fin=d.fm.txt; } });
+  return Object.values(by).sort((x,y)=>x.ot.localeCompare(y.ot)).map(a=>({ot:a.ot,cliente:a.cliente,wh:[...a.whs].join('/'),lineas:a.lineas,skus:a.sk.size,
+    solicitado:a.solicitado,pendiente:a.pendiente,trabajado:a.trabajado,completas:a.completas,fecha_ini:a.fecha_ini,fecha_fin:a.fecha_fin,mov_ini:a.mov_ini,mov_fin:a.mov_fin}));
+}
+function deriveDiario(rows){
+  const by={};
+  rows.forEach(d=>{ if(!d.fm||worked(d)<=0) return; const it=d.item||d.ean, k=d.ot+'|'+d.fm.day+'|'+it+'|'+d.wh;
+    const a=(by[k]=by[k]||{ot:d.ot,dia:d.fm.day,item:it,wh:d.wh,trabajado:0}); a.trabajado+=worked(d); });
+  return Object.values(by);
+}
+
+/* ---- Acceso unificado (API o CSV) ---- */
+async function fetchResumen(desde,hasta){
+  if(MODE==='api'){ const p={accion:'resumen'}; if(desde)p.desde=desde; if(hasta)p.hasta=hasta; return rowsToObjs(await api(p)).map(mapRes); }
+  return deriveRes(FULL.filter(d=>inRange(d,desde,hasta)));
+}
+async function fetchDetalle(ots,desde,hasta){
+  if(MODE==='api'){ const p={accion:'detalle',ot:ots.join(',')}; if(desde)p.desde=desde; if(hasta)p.hasta=hasta; return rowsToObjs(await api(p)).map(mapDet); }
+  const set=new Set(ots); return FULL.filter(d=>set.has(d.ot)&&inRange(d,desde,hasta));
+}
+async function fetchDiario(){
+  if(MODE==='api') return rowsToObjs(await api({accion:'diario'})).map(o=>({ot:String(o.ot),dia:o.dia,item:o.item,wh:o.wh,trabajado:+o.trabajado||0}));
+  return deriveDiario(FULL);
+}
+
+/* ---- OT de trabajo ---- */
+function saveWork(){ try{ localStorage.setItem(WORK_KEY, JSON.stringify([...wState.ots])); }catch(e){} }
+function pickWork(){
+  const valid=new Set(RES.map(o=>o.ot));
+  [...wState.ots].forEach(o=>{ if(!valid.has(o)) wState.ots.delete(o); });
+  if(workInit) return; workInit=true;
+  let saved=[]; try{ saved=JSON.parse(localStorage.getItem(WORK_KEY)||'[]'); }catch(e){}
+  saved.filter(o=>valid.has(o)).forEach(o=>wState.ots.add(o));
+  if(!wState.ots.size && RES.length){            // sin recuerdo: la OT con movimiento más reciente
+    const last=[...RES].sort((a,b)=>(b.mov_fin||b.fecha_fin||'').localeCompare(a.mov_fin||a.fecha_fin||''))[0];
+    wState.ots.add(last.ot);
+  }
+}
+async function loadDetail(renderAfter=true){
+  const tok=++detTok, ots=[...wState.ots];
+  if(!ots.length){ DATA=[]; selected.clear(); msRefresh('ms-t-ot'); msRefresh('ms-t-ean'); if(renderAfter) render(); return; }
+  if(renderAfter){ setSync('Cargando detalle…'); $('detail-body').innerHTML='<tr><td colspan="13" class="h-16 text-center text-on-surface-variant">Cargando detalle de '+ots.map(esc).join(', ')+'…</td></tr>'; }
+  const rows = await fetchDetalle(ots, wState.from, wState.to);
+  if(tok!==detTok) return;                          // llegó una respuesta vieja: se descarta
+  DATA = rows; DATA.forEach((d,i)=>d.k=i); selected.clear();
+  msRefresh('ms-t-ot'); msRefresh('ms-t-ean');
+  if(renderAfter) render();
+}
+function onWorkChange(){
+  saveWork(); clearTimeout(wTimer);
+  wTimer=setTimeout(async()=>{
+    try{ hideErr(); await loadDetail(true); lastSync=new Date(); setSync('Sincronizado: '+hhmm()); }
+    catch(e){ showErr('No se pudo cargar el detalle: '+e.message); setSync('Error de sincronización',true); }
+  }, 250);
+}
+async function loadDRES(){
+  const tok=++dTok;
+  if(!dState.from && !dState.to){ DRES=null; return; }
+  const r=await fetchResumen(dState.from, dState.to);
+  if(tok!==dTok) return; DRES=r;
+}
+
+/* ---- Carga general ---- */
+async function loadAll(){
+  setSync('Actualizando…'); hideErr();
   try{
-    const res = await fetch(CSV_URL + '&_=' + Date.now());
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const rows = parseCSV(await res.text());
-    const headers = rows[0];
-    const idx = {}; for(const k in COLS) idx[k]=findCol(headers, COLS[k]);
-    const missing = Object.keys(idx).filter(k=>idx[k]<0 && ['ot','qty','saldo','ean'].includes(k));
-    if(missing.length) throw new Error('No encontré las columnas de: '+missing.join(', ')+'. Revisa los encabezados del sheet.');
-    DATA = rows.slice(1).map(r=>{
-      const g=k=> idx[k]>-1 ? (r[idx[k]]||'').trim() : '';
-      return { ot:g('ot'), cliente:g('cliente'), fecha:fmtDate(g('fecha')), item:g('item'),
-        desc:g('desc'), ean:g('ean'), wh:g('wh'), lote:g('lote'), lotec:g('lotec'), venc:fmtDate(g('venc')), loc:g('loc'),
-        qty:num(g('qty')), pend:num(g('saldo')), fm:parseFM(g('fm')) };
-    }).filter(d=>d.ot);
-    DATA.forEach((d,i)=>d.k=i);
-    selected.clear(); lastSync=new Date();
-    $('side-status').textContent='En línea'; $('sync-dot').className='w-2 h-2 rounded-full bg-tertiary-container animate-pulse';
-    buildFilters(); render(); buildHist();
+    if(MODE==='api'){
+      try{ RES = await fetchResumen('',''); }
+      catch(e){ console.warn('API no disponible:', e); MODE='csv'; showErr('ℹ️ No pude usar la API ('+e.message+'). Se cargó el CSV completo; funciona igual pero es más pesado.'); }
+    }
+    if(MODE==='csv'){ await loadCSV(); RES = await fetchResumen('',''); }
+    pickWork();
+    await loadDetail(false);
+    await loadDRES();
+    if(hLoaded) DIARIO = await fetchDiario();
+    lastSync=new Date();
+    $('side-status').textContent = MODE==='api' ? 'En línea (API)' : 'En línea (CSV)';
+    setSync('Sincronizado: '+hhmm());
+    buildFilters(); render(); if(hLoaded) buildHist();
   }catch(e){
-    $('error-box').textContent='⚠️ No se pudo leer el Google Sheet: '+e.message+' (verifica que esté publicado en la web como CSV).';
-    $('error-box').classList.remove('hidden');
-    $('sync-text').textContent='Error de sincronización'; $('sync-dot').className='w-2 h-2 rounded-full bg-error';
-    $('side-status').textContent='Sin conexión';
+    showErr('⚠️ No se pudo leer los datos: '+e.message);
+    setSync('Error de sincronización',true); $('side-status').textContent='Sin conexión';
   }
 }
 
 function buildFilters(){
-  const ots=[...new Set(DATA.map(d=>d.ot))].sort();
-  const dates=[...new Set(DATA.map(d=>d.fecha))].sort().reverse();
-  const whs=[...new Set(DATA.map(d=>d.wh).filter(Boolean))].sort();
-  $('filter-ot').innerHTML=`<option value="ALL">Todas las Órdenes (${ots.length})</option>`+ots.map(o=>`<option>${esc(o)}</option>`).join('');
-  $('filter-date').innerHTML=`<option value="ALL">Todas las fechas</option>`+dates.map(o=>`<option>${esc(o)}</option>`).join('');
-  msRefresh('ms-d-ot'); msRefresh('ms-t-ean'); msRefresh('ms-t-ot'); msRefresh('ms-t-est');
-  const vd=dates.filter(Boolean); ['d-from','d-to'].forEach(id=>{ $(id).min=vd[vd.length-1]||''; $(id).max=vd[0]||''; });
-  $('filter-ot').value=ots.includes(state.ot)?state.ot:'ALL'; state.ot=$('filter-ot').value;
-  $('filter-date').value=dates.includes(state.date)?state.date:'ALL'; state.date=$('filter-date').value;
+  const whs=[...new Set(RES.flatMap(o=>String(o.wh).split('/')).filter(Boolean))].sort();
+  ['ms-f-ot','ms-d-ot','ms-t-ean','ms-t-ot','ms-t-est'].forEach(msRefresh);
+  const ds=RES.flatMap(o=>[o.fecha_ini,o.fecha_fin]).filter(Boolean).sort(), mn=ds[0]||'', mx=ds[ds.length-1]||'';
+  ['d-from','d-to','f-from','f-to'].forEach(id=>{ $(id).min=mn; $(id).max=mx; });
+  $('f-from').value=wState.from; $('f-to').value=wState.to;
+  if(state.wh!=='ALL' && !whs.includes(state.wh)) state.wh='ALL';
   $('wh-buttons').innerHTML=['ALL',...whs].map(w=>`<button data-wh="${esc(w)}" class="wh-btn px-space-sm py-1 rounded font-label-sm text-label-sm uppercase">${w==='ALL'?'WH: Todos':'WH '+esc(w)}</button>`).join('');
   document.querySelectorAll('.wh-btn').forEach(b=>b.onclick=()=>{state.wh=b.dataset.wh;state.page=1;render();});
 }
 
 function filtered(includeSearch=true){
   const q=state.q.toLowerCase();
-  return DATA.filter(d=>(state.ot==='ALL'||d.ot===state.ot)&&(state.date==='ALL'||d.fecha===state.date)&&(state.wh==='ALL'||d.wh===state.wh)
+  return DATA.filter(d=>(state.wh==='ALL'||d.wh===state.wh)
     &&(!includeSearch||!q||[d.ot,d.ean,d.item,d.desc,d.lote,d.lotec,d.loc,d.cliente].join(' ').toLowerCase().includes(q)));
 }
 
 /* ============ MULTI-SELECT (varias opciones a la vez) ============ */
 const MS={};
-function msInit(id, allLabel, getOpts, set, onChange, searchable=false){
+function msInit(id, allLabel, getOpts, set, onChange, searchable=false, clearText='Ver todas'){
   const root=$(id);
   root.innerHTML=`<button type="button" class="ms-btn flex items-center gap-1 bg-surface-container-low hover:bg-surface-container-high pl-3 pr-2 py-1.5 rounded font-label-md text-label-md max-w-[260px]"><span class="ms-lbl truncate"></span><span class="material-symbols-outlined text-[16px]">expand_more</span></button>
     <div class="ms-panel hidden absolute left-0 top-full mt-1 z-30 w-72 bg-surface-container-lowest rounded-xl shadow-lg border border-surface-container p-space-sm">
-      <div class="flex items-center justify-between mb-1 px-1 font-label-md text-label-md"><span class="text-on-surface-variant">Marca una o varias</span><button type="button" class="ms-clear text-primary hover:underline">Ver todas</button></div>
+      <div class="flex items-center justify-between mb-1 px-1 font-label-md text-label-md"><span class="text-on-surface-variant">Marca una o varias</span><button type="button" class="ms-clear text-primary hover:underline">${clearText}</button></div>
       ${searchable?'<input type="text" class="ms-search w-full mb-1 px-2 py-1.5 bg-surface-container-low rounded font-body-md text-body-md focus:outline-none" placeholder="Buscar...">':''}
       <div class="ms-list max-h-56 overflow-y-auto flex flex-col"></div></div>`;
   MS[id]={root,allLabel,getOpts,set,onChange};
@@ -381,7 +480,8 @@ function msRefresh(id){
 }
 function msCloseAll(){ document.querySelectorAll('.ms-panel').forEach(p=>p.classList.add('hidden')); }
 document.addEventListener('click', msCloseAll);
-const otOpts = () => [...new Set(DATA.map(d=>d.ot))].sort().map(o=>({v:o,t:o}));
+const otOpts = () => RES.map(o=>({v:o.ot,t:o.ot,sub:(o.cliente?o.cliente+' · ':'')+'pend. '+fmt(o.pendiente)}));
+const otOptsData = () => [...new Set(DATA.map(d=>d.ot))].sort().map(o=>({v:o,t:o}));
 const eanOpts = () => { const m=new Map(); DATA.forEach(d=>{ if(d.ean && !m.has(d.ean)) m.set(d.ean,d.desc); }); return [...m].sort((a,b)=>a[0].localeCompare(b[0])).map(([v,t])=>({v,t:v,sub:t})); };
 const ESTADOS = ['Completado','En proceso','Pendiente'].map(e=>({v:e,t:e}));
 function detailRows(){
@@ -392,15 +492,9 @@ function detailRows(){
 const dState={ots:new Set(),from:'',to:''};
 const tState={ots:new Set(),est:new Set(),ean:new Set()};
 function desgloseList(){
-  const by={};
-  DATA.forEach(d=>{
-    if(dState.ots.size && !dState.ots.has(d.ot)) return;
-    if(dState.from && (!d.fecha || d.fecha<dState.from)) return;     // TRANSACTION DATE (yyyymmdd → yyyy-mm-dd)
-    if(dState.to && (!d.fecha || d.fecha>dState.to)) return;
-    const o=(by[d.ot]=by[d.ot]||{ot:d.ot,cliente:d.cliente,wh:new Set(),skus:new Set(),lines:0,full:0,req:0,pend:0});
-    o.wh.add(d.wh); o.skus.add(d.item||d.ean); o.lines++; if(d.pend<=0)o.full++; o.req+=d.qty; o.pend+=d.pend;
-  });
-  return Object.values(by).sort((a,b)=>a.ot.localeCompare(b.ot));
+  const src = DRES || RES;                       // con fechas: resumen filtrado por TRANSACTION DATE desde el servidor
+  return src.filter(o=>!dState.ots.size || dState.ots.has(o.ot)).sort((a,b)=>a.ot.localeCompare(b.ot))
+    .map(o=>({ot:o.ot,cliente:o.cliente,wh:o.wh,skus:o.skus,lines:o.lineas,full:o.completas,req:o.solicitado,pend:o.pendiente}));
 }
 
 /* ============ RENDER ============ */
@@ -434,18 +528,14 @@ function render(){
 
   $('top-ots').textContent=ots.length+(ots.length===1?' OT':' OTs');
   $('top-date').textContent=dates.length?(dates[0]===dates[dates.length-1]?dates[0]:dates[0]+' → '+dates[dates.length-1]):'—';
-  $('filter-summary').innerHTML=`Mostrando <strong class="text-on-surface">${ots.length} OTs</strong> | ${fmt(req)} uds solicitadas · ${fmt(pend)} pendientes`;
-  $('sync-text').textContent='Sincronizado: '+(lastSync?lastSync.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'—');
+  $('filter-summary').innerHTML=`Detalle cargado: <strong class="text-on-surface">${ots.length} OT</strong> · ${fmt(DATA.length)} líneas | ${fmt(req)} uds solicitadas · ${fmt(pend)} pendientes`;
 
-  // Resumen por OT
-  const by={}; all.forEach(d=>{const o=(by[d.ot]=by[d.ot]||{ot:d.ot,cliente:d.cliente,wh:new Set(),skus:new Set(),lines:0,full:0,req:0,pend:0});
-    o.wh.add(d.wh); o.skus.add(d.item||d.ean); o.lines++; if(d.pend<=0)o.full++; o.req+=d.qty; o.pend+=d.pend;});
-  const list=Object.values(by).sort((a,b)=>a.ot.localeCompare(b.ot));
+  // Desglose por OT (resumen del servidor)
   const dl=desgloseList(); $('d-count').textContent=dl.length+(dl.length===1?' orden':' órdenes'); $('ot-body').innerHTML=dl.map(o=>{const dn=Math.max(0,o.req-o.pend), p=pct(dn,o.req);
     return `<tr class="hover:bg-surface-container-low/60 h-16"><td class="py-space-md px-space-md"><div class="font-bold text-primary text-[15px]">${esc(o.ot)}</div><div class="text-on-surface-variant font-label-sm text-label-sm">${esc(o.cliente)}</div></td>
-    <td class="py-space-md px-space-md"><span class="px-2 py-0.5 rounded bg-secondary text-on-secondary font-label-sm text-label-sm font-semibold">${[...o.wh].filter(Boolean).map(esc).join(', ')||'—'}</span></td>
-    <td class="py-space-md px-space-md text-right font-mono">${fmt(o.skus.size)}</td>
-    <td class="py-space-md px-space-md text-right font-mono">${fmt(o.full)} / ${fmt(o.lines)}</td>
+    <td class="py-space-md px-space-md"><span class="px-2 py-0.5 rounded bg-secondary text-on-secondary font-label-sm text-label-sm font-semibold">${esc(o.wh)||'—'}</span></td>
+    <td class="py-space-md px-space-md text-right font-mono">${fmt(o.skus)}</td>
+    <td class="py-space-md px-space-md text-right font-mono">${o.full==null?'—':fmt(o.full)} / ${fmt(o.lines)}</td>
     <td class="py-space-md px-space-md text-right font-mono font-semibold">${fmt(o.req)}</td>
     <td class="py-space-md px-space-md text-right font-mono font-semibold text-tertiary">${fmt(dn)}</td>
     <td class="py-space-md px-space-md text-right font-mono font-semibold ${o.pend>0?'text-error':'text-on-surface-variant'}">${fmt(o.pend)}</td>
@@ -468,7 +558,7 @@ function render(){
     <td class="py-space-md px-space-md text-right font-mono font-semibold ${d.pend>0?'text-error':'text-on-surface-variant'}">${fmt(d.pend)}</td>
     <td class="py-space-md px-space-md"><div class="flex justify-between font-mono text-label-sm mb-1"><span>${fmt(dn)} uds</span><span>${p.toFixed(0)}%</span></div>${bar(p, e==='Completado'?'bg-tertiary-container':'bg-primary-container')}</td>
     <td class="py-space-md px-space-md text-center"><span class="inline-flex px-2.5 py-1 rounded-full ${badge(e)} font-label-sm text-label-sm font-semibold">${e}</span></td>
-    <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(d.fecha)}</td></tr>`;}).join('')||`<tr><td colspan="13" class="p-space-lg text-center text-on-surface-variant">Sin resultados</td></tr>`;
+    <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(d.fecha)}</td></tr>`;}).join('')||`<tr><td colspan="13" class="p-space-lg text-center text-on-surface-variant">${wState.ots.size?'Sin resultados':'Elige una o más OT en «Elegir OT» (arriba) para cargar su detalle'}</td></tr>`;
   const nSel=selected.size;
   $('page-info').innerHTML=(rows.length?`<strong>${fmt(rows.length)}</strong> registros · se ven 10, desplázate para ver el resto`:'0 registros')+(nSel?` • <strong class="text-primary">${fmt(nSel)} seleccionados</strong>`:'');
   $('xls-label').textContent = nSel ? `Excel (.xls) · ${fmt(nSel)} sel.` : 'Excel (.xls)';
@@ -496,11 +586,16 @@ function exportXls(){
 
 /* ============ HISTÓRICO OT ============ */
 let HDAYS=[], hSel={from:null,to:null}, hRows=[], hasFM=true;
-const worked = d => Math.max(0, d.qty - d.pend);
 
+async function openHist(){
+  if(hLoaded) return;
+  $('hist-total-lbl').textContent='Cargando histórico…';
+  try{ DIARIO=await fetchDiario(); hLoaded=true; buildHist(); }
+  catch(e){ $('hist-warn').textContent='No se pudo cargar el histórico: '+e.message; $('hist-warn').classList.remove('hidden'); }
+}
 function buildHist(){
-  hasFM = DATA.some(d=>d.fm);
-  HDAYS=[...new Set(DATA.filter(d=>d.fm).map(d=>d.fm.day))].sort();
+  hasFM = DIARIO.length>0;
+  HDAYS=[...new Set(DIARIO.map(r=>r.dia))].sort();
   const n=HDAYS.length, f=$('hist-from'), t=$('hist-to');
   f.max=t.max=Math.max(0,n-1);
   let a=HDAYS.indexOf(hSel.from), b=HDAYS.indexOf(hSel.to);
@@ -510,7 +605,7 @@ function buildHist(){
 }
 function renderHist(){
   const warn=$('hist-warn');
-  if(!hasFM){ warn.textContent='No encontré datos en la columna FECHA MOV (¿cambió el nombre del encabezado o está vacía?).'; warn.classList.remove('hidden'); }
+  if(!hasFM){ warn.textContent='No encontré movimientos con FECHA MOV (¿la columna está vacía o cambió de nombre?).'; warn.classList.remove('hidden'); }
   else warn.classList.add('hidden');
   const n=HDAYS.length; let a=+$('hist-from').value, b=+$('hist-to').value;
   if(a>b){ [a,b]=[b,a]; }
@@ -522,40 +617,38 @@ function renderHist(){
   $('hist-min-lbl').textContent=HDAYS[0]||'—'; $('hist-max-lbl').textContent=HDAYS[n-1]||'—';
 
   // gráfico diario
-  const perDay={}; DATA.forEach(d=>{ if(d.fm) perDay[d.fm.day]=(perDay[d.fm.day]||0)+worked(d); });
+  const perDay={}; DIARIO.forEach(r=>{ perDay[r.dia]=(perDay[r.dia]||0)+r.trabajado; });
   const mx=Math.max(1,...Object.values(perDay));
   $('hist-chart').innerHTML=HDAYS.map((day,i)=>{const v=perDay[day]||0, inr=i>=a&&i<=b;
     return `<div class="flex-1 min-w-[3px] rounded-t ${inr?'bg-primary-container':'bg-surface-container-highest'}" style="height:${Math.max(2,v/mx*100)}%" title="${day}: ${fmt(v)} uds"></div>`;}).join('')||'<div class="text-on-surface-variant font-body-sm text-body-sm self-center">Sin fechas</div>';
 
-  // agregación por OT
+  // por OT: totales y fechas vienen del resumen; el rango sale del diario
   const by={};
-  DATA.forEach(d=>{
-    const o=(by[d.ot]=by[d.ot]||{ot:d.ot,cliente:d.cliente,wh:new Set(),items:new Set(),itemsR:new Set(),req:0,wAll:0,uR:0,first:null,last:null});
-    const it=d.item||d.ean; o.wh.add(d.wh); o.items.add(it); o.req+=d.qty; o.wAll+=worked(d);
-    if(d.fm){
-      if(!o.first||d.fm.ts<o.first.ts) o.first=d.fm;
-      if(!o.last||d.fm.ts>o.last.ts) o.last=d.fm;
-      if(d.fm.day>=fromDay && d.fm.day<=toDay && worked(d)>0){ o.uR+=worked(d); o.itemsR.add(it); }
-    }
+  RES.forEach(o=>{ by[o.ot]={ot:o.ot,cliente:o.cliente,wh:o.wh,items:o.skus,req:o.solicitado,wAll:o.trabajado,first:o.mov_ini,last:o.mov_fin,uR:0,sk:new Set()}; });
+  const w={};
+  DIARIO.forEach(r=>{
+    if(r.dia<fromDay||r.dia>toDay) return;
+    const o=by[r.ot]; if(o){ o.uR+=r.trabajado; o.sk.add(r.item); }
+    const k=r.wh||'—'; w[k]=(w[k]||0)+r.trabajado;
   });
-  hRows=Object.values(by).sort((x,y)=>x.ot.localeCompare(y.ot));
+  hRows=Object.values(by).sort((x,y)=>x.ot.localeCompare(y.ot)).map(o=>({...o,itemsRn:o.sk.size}));
   const totalR=hRows.reduce((s,o)=>s+o.uR,0);
   $('hist-range-lbl').textContent = fromDay ? (fromDay===toDay?fromDay:`${fromDay}  →  ${toDay}`) : '—';
   $('hist-total-lbl').textContent = `${fmt(totalR)} uds trabajadas en el rango`;
 
   $('hist-body').innerHTML=hRows.map(o=>{
-    const pc=pct(o.itemsR.size,o.items.size), pu=pct(o.uR,o.req);
+    const pc=pct(o.itemsRn,o.items), pu=pct(o.uR,o.req);
     const e = o.wAll>=o.req && o.req>0 ? 'Culminado' : (o.wAll>0 ? 'En proceso' : 'Pendiente');
     const eb = e==='Culminado'?'bg-tertiary-fixed text-tertiary':e==='En proceso'?'bg-primary-fixed text-primary':'bg-surface-container text-secondary';
     const dim = o.uR===0 ? 'opacity-50' : '';
     return `<tr class="hover:bg-surface-container-low/60 ${dim}">
       <td class="py-space-md px-space-md"><div class="font-bold text-primary text-[15px]">${esc(o.ot)}</div><div class="text-on-surface-variant font-label-sm text-label-sm">${esc(o.cliente)}</div></td>
-      <td class="py-space-md px-space-md"><span class="px-2 py-0.5 rounded bg-secondary text-on-secondary font-label-sm text-label-sm font-semibold">${[...o.wh].filter(Boolean).map(esc).join(', ')||'—'}</span></td>
-      <td class="py-space-md px-space-md"><div class="flex justify-between font-mono font-bold text-primary mb-1 text-label-sm"><span>${fmt(o.itemsR.size)} de ${fmt(o.items.size)} SKUs</span><span>${pc.toFixed(1)}%</span></div>${bar(pc)}</td>
+      <td class="py-space-md px-space-md"><span class="px-2 py-0.5 rounded bg-secondary text-on-secondary font-label-sm text-label-sm font-semibold">${esc(o.wh)||'—'}</span></td>
+      <td class="py-space-md px-space-md"><div class="flex justify-between font-mono font-bold text-primary mb-1 text-label-sm"><span>${fmt(o.itemsRn)} de ${fmt(o.items)} SKUs</span><span>${pc.toFixed(1)}%</span></div>${bar(pc)}</td>
       <td class="py-space-md px-space-md"><div class="flex justify-between font-mono font-bold text-primary mb-1 text-label-sm"><span>${fmt(o.uR)} / ${fmt(o.req)} uds</span><span>${pu.toFixed(1)}%</span></div>${bar(pu)}</td>
       <td class="py-space-md px-space-md text-center"><span class="inline-flex px-2.5 py-1 rounded-full ${eb} font-label-sm text-label-sm font-semibold">${e}</span></td>
-      <td class="py-space-md px-space-md text-right font-mono font-semibold text-on-surface">${o.first?esc(o.first.txt):'—'}</td>
-      <td class="py-space-md px-space-md text-right font-mono font-semibold text-on-surface">${o.last?esc(o.last.txt):'—'}</td></tr>`;
+      <td class="py-space-md px-space-md text-right font-mono font-semibold text-on-surface">${o.first?esc(o.first):'—'}</td>
+      <td class="py-space-md px-space-md text-right font-mono font-semibold text-on-surface">${o.last?esc(o.last):'—'}</td></tr>`;
   }).join('')||`<tr><td colspan="7" class="p-space-lg text-center text-on-surface-variant">Sin datos</td></tr>`;
 
   // Gráfico: unidades trabajadas por OT (rango)
@@ -563,30 +656,27 @@ function renderHist(){
     return `<div class="flex flex-col gap-1"><div class="flex justify-between font-label-sm text-label-sm"><span class="font-bold">${esc(o.ot)}</span><span class="font-mono font-bold">${fmt(o.uR)} / ${fmt(o.req)} uds (${p.toFixed(1)}%)</span></div>
     <div class="w-full bg-surface-container rounded-full h-3 overflow-hidden"><div class="${p>=100?'bg-tertiary-container':'bg-primary-container'} h-full rounded-full transition-all duration-500" style="width:${p}%"></div></div></div>`;}).join('')||'<p class="text-on-surface-variant">Sin datos</p>';
   // Gráfico: distribución por almacén (rango)
-  const w={}; DATA.forEach(d=>{ const k=d.wh||'—'; const o=(w[k]=w[k]||{req:0,uR:0}); o.req+=d.qty; if(d.fm && d.fm.day>=fromDay && d.fm.day<=toDay) o.uR+=worked(d); });
-  const wc=['bg-primary-container','bg-secondary','bg-tertiary-container'], ent=Object.entries(w).sort((x,y)=>y[1].uR-x[1].uR);
-  $('chart-wh').innerHTML=`<div class="w-full bg-surface-container rounded-full h-3 flex overflow-hidden mb-space-sm">${ent.map(([k,v],i)=>`<div class="${wc[i%3]} h-full" style="width:${totalR?v.uR/totalR*100:0}%"></div>`).join('')}</div>`+
-    ent.map(([k,v],i)=>`<div class="flex items-center justify-between font-label-sm text-label-sm"><div class="flex items-center gap-space-xs"><span class="w-3 h-3 rounded-full ${wc[i%3]}"></span><span class="font-bold">Planta ${esc(k)} (${totalR?(v.uR/totalR*100).toFixed(1):0}%)</span></div><span class="font-mono text-on-surface-variant">${fmt(v.uR)} trab. · ${fmt(v.req)} sol.</span></div>`).join('')||'<p class="text-on-surface-variant">Sin datos</p>';
+  const wc=['bg-primary-container','bg-secondary','bg-tertiary-container'], ent=Object.entries(w).sort((x,y)=>y[1]-x[1]);
+  $('chart-wh').innerHTML=`<div class="w-full bg-surface-container rounded-full h-3 flex overflow-hidden mb-space-sm">${ent.map(([k,v],i)=>`<div class="${wc[i%3]} h-full" style="width:${totalR?v/totalR*100:0}%"></div>`).join('')}</div>`+
+    ent.map(([k,v],i)=>`<div class="flex items-center justify-between font-label-sm text-label-sm"><div class="flex items-center gap-space-xs"><span class="w-3 h-3 rounded-full ${wc[i%3]}"></span><span class="font-bold">Planta ${esc(k)} (${totalR?(v/totalR*100).toFixed(1):0}%)</span></div><span class="font-mono text-on-surface-variant">${fmt(v)} uds trabajadas</span></div>`).join('')||'<p class="text-on-surface-variant">Sin datos</p>';
 }
 function exportHist(){
   if(typeof XLSX==='undefined'){ alert('No se pudo cargar la librería de Excel.'); return; }
   if(!hRows.length){ alert('No hay datos para exportar.'); return; }
-  const out=hRows.map(o=>({'Orden':o.ot,'Cliente':o.cliente,'WH':[...o.wh].filter(Boolean).join(', '),
-    'SKUs trabajados (rango)':o.itemsR.size,'SKUs totales':o.items.size,
+  const out=hRows.map(o=>({'Orden':o.ot,'Cliente':o.cliente,'WH':o.wh,
+    'SKUs trabajados (rango)':o.itemsRn,'SKUs totales':o.items,
     'Unidades trabajadas (rango)':o.uR,'Unidades solicitadas':o.req,'Unidades trabajadas (total)':o.wAll,
-    'Avance rango %':+pct(o.uR,o.req).toFixed(1),'Fecha inicial':o.first?o.first.txt:'','Fecha final':o.last?o.last.txt:'',
+    'Avance rango %':+pct(o.uR,o.req).toFixed(1),'Fecha inicial':o.first||'','Fecha final':o.last||'',
     'Rango desde':hSel.from,'Rango hasta':hSel.to}));
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(out), 'Histórico OT');
   XLSX.writeFile(wb, `historico_ot_${new Date().toISOString().slice(0,10)}.xls`, {bookType:'biff8'});
 }
 
 /* ============ EVENTOS ============ */
-$('filter-ot').onchange=e=>{state.ot=e.target.value;state.page=1;render();};
-$('filter-date').onchange=e=>{state.date=e.target.value;state.page=1;render();};
 $('table-search').oninput=e=>{state.q=e.target.value;$('global-search').value=e.target.value;state.page=1;render();};
 $('global-search').oninput=e=>{state.q=e.target.value;$('table-search').value=e.target.value;state.page=1;render();};
 $('prev').onclick=()=>{state.page--;render();}; $('next').onclick=()=>{state.page++;render();};
-$('btn-refresh').onclick=load;
+$('btn-refresh').onclick=loadAll;
 $('btn-xls').onclick=exportXls; $('btn-xls2').onclick=exportXls;
 $('sel-all').onchange=e=>{ const rows=detailRows(); rows.forEach(d=>e.target.checked?selected.add(d.k):selected.delete(d.k)); render(); };
 $('detail-body').addEventListener('change',e=>{ if(e.target.classList.contains('row-sel')){ const k=+e.target.dataset.k; e.target.checked?selected.add(k):selected.delete(k); render(); }});
@@ -594,17 +684,21 @@ $('detail-body').addEventListener('change',e=>{ if(e.target.classList.contains('
 $('hist-from').oninput=()=>{ if(+$('hist-from').value>+$('hist-to').value) $('hist-to').value=$('hist-from').value; renderHist(); };
 $('hist-to').oninput=()=>{ if(+$('hist-to').value<+$('hist-from').value) $('hist-from').value=$('hist-to').value; renderHist(); };
 $('hist-all').onclick=()=>{ $('hist-from').value=0; $('hist-to').value=Math.max(0,HDAYS.length-1); renderHist(); };
-$('hist-xls').onclick=exportHist; $('hist-refresh').onclick=load;
+$('hist-xls').onclick=exportHist; $('hist-refresh').onclick=loadAll;
 $('hist-d-from').onchange=e=>{ const v=e.target.value; let i=v?HDAYS.findIndex(d=>d>=v):0; if(i<0)i=Math.max(0,HDAYS.length-1); $('hist-from').value=i; if(+$('hist-to').value<i)$('hist-to').value=i; renderHist(); };
 $('hist-d-to').onchange=e=>{ const v=e.target.value; let i=HDAYS.length-1; if(v){ i=HDAYS.map(d=>d<=v).lastIndexOf(true); if(i<0)i=0; } $('hist-to').value=i; if(+$('hist-from').value>i)$('hist-from').value=i; renderHist(); };
+msInit('ms-f-ot','Elegir OT',otOpts,wState.ots,onWorkChange,true,'Limpiar');
 msInit('ms-d-ot','Todas las OT',otOpts,dState.ots,()=>render());
 msInit('ms-t-ean','Todos los EAN',eanOpts,tState.ean,()=>{state.page=1;render();},true);
-msInit('ms-t-ot','Todas las OT',otOpts,tState.ots,()=>{state.page=1;render();});
+msInit('ms-t-ot','Todas las OT',otOptsData,tState.ots,()=>{state.page=1;render();});
 msInit('ms-t-est','Todos los estados',()=>ESTADOS,tState.est,()=>{state.page=1;render();});
-msRefresh('ms-d-ot'); msRefresh('ms-t-ean'); msRefresh('ms-t-ot'); msRefresh('ms-t-est');
-$('d-from').onchange=e=>{dState.from=e.target.value;render();};
-$('d-to').onchange=e=>{dState.to=e.target.value;render();};
-$('d-clear').onclick=()=>{dState.ots.clear();dState.from='';dState.to='';msRefresh('ms-d-ot');$('d-from').value='';$('d-to').value='';render();};
+['ms-f-ot','ms-d-ot','ms-t-ean','ms-t-ot','ms-t-est'].forEach(msRefresh);
+$('f-from').onchange=e=>{wState.from=e.target.value;onWorkChange();};
+$('f-to').onchange=e=>{wState.to=e.target.value;onWorkChange();};
+const dReload=async()=>{ try{ await loadDRES(); render(); }catch(e){ showErr('No se pudo filtrar el desglose: '+e.message); } };
+$('d-from').onchange=e=>{dState.from=e.target.value;dReload();};
+$('d-to').onchange=e=>{dState.to=e.target.value;dReload();};
+$('d-clear').onclick=()=>{dState.ots.clear();dState.from='';dState.to='';msRefresh('ms-d-ot');$('d-from').value='';$('d-to').value='';dReload();};
 
 /* ============ MENÚ LATERAL AUTO-OCULTO ============ */
 let sbPinned=false, sbTimer=null;
@@ -634,12 +728,15 @@ function showView(v){
     const on = (v==='hist'&&b.dataset.nav==='hist')||(v==='dash'&&b.dataset.nav==='dash')||(v==='detalle'&&b.dataset.nav==='detalle');
     b.className='nav-btn w-full text-left flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg '+(on?'bg-primary-container text-on-primary shadow-sm':'text-on-surface-variant hover:bg-surface-container-high');
   });
+  if(v==='hist') openHist();
   if(v==='detalle') $('detalle').scrollIntoView({behavior:'smooth'}); else window.scrollTo({top:0});
 }
 document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>showView(b.dataset.nav));
 showView('dash');
 
-load(); setInterval(load, REFRESH_MS);
+loadAll();
+setInterval(()=>{ if(!document.hidden) loadAll(); }, REFRESH_MS);                         // no refresca si la pestaña está oculta
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && lastSync && Date.now()-lastSync>REFRESH_MS) loadAll(); });
 </script>
 </body>
 </html>
