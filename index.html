@@ -21,6 +21,7 @@
 #sidebar.open{transform:translateX(0);box-shadow:6px 0 24px rgba(11,28,48,.18)}
 #sb-handle{transition:opacity .15s ease,transform .15s ease}
 #sb-handle.hide{opacity:0;pointer-events:none;transform:translateX(-100%)}
+.vscroll.v10{max-height:676px}
 </style>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"on-tertiary":"#ffffff","surface-container-low":"#eff4ff","outline-variant":"#c4c5d7","outline":"#747686","surface-container-highest":"#d3e4fe","tertiary-container":"#006948","secondary-container":"#dae2fd","on-secondary":"#ffffff","primary":"#0037b0","tertiary":"#004f35","error":"#ba1a1a","surface-container-lowest":"#ffffff","surface-container-high":"#dce9ff","surface":"#f8f9ff","on-primary":"#ffffff","tertiary-fixed":"#85f8c4","primary-fixed":"#dce1ff","primary-container":"#1d4ed8","on-surface":"#0b1c30","on-primary-fixed":"#001551","secondary-fixed":"#dae2fd","on-secondary-fixed":"#131b2e","on-surface-variant":"#434655","background":"#f8f9ff","surface-container":"#e5eeff","secondary":"#565e74"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"gutter-lg":"1.5rem","margin-sm":"1rem","space-md":"0.75rem","space-xl":"1.5rem","gutter":"1rem","margin-lg":"2rem","space-xs":"0.25rem","margin":"1.5rem","space-sm":"0.5rem","space-lg":"1rem"},"fontFamily":{"label-md":["Inter"],"body-md":["Inter"],"body-sm":["Inter"],"label-sm":["Inter"],"label-lg":["Inter"],"headline-xl":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"]},"fontSize":{"label-md":["11px",{"lineHeight":"16px","letterSpacing":"0.025em","fontWeight":"600"}],"body-md":["13px",{"lineHeight":"18px","fontWeight":"400"}],"label-sm":["10px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"700"}],"label-lg":["13px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"600"}],"headline-xl":["30px",{"lineHeight":"38px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-md":["18px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}]}}}}</script>
@@ -138,6 +139,7 @@
             <p class="font-body-sm text-body-sm text-on-surface-variant">Traza física por SKU, lote y ubicación WMS.</p>
           </div>
           <div class="flex flex-wrap items-center gap-space-sm">
+            <div class="relative" id="ms-t-ean"></div>
             <div class="relative" id="ms-t-ot"></div>
             <div class="relative" id="ms-t-est"></div>
             <div class="relative">
@@ -147,13 +149,13 @@
             <button id="btn-xls2" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">file_download</span><span id="xls-label">Excel (.xls)</span></button>
           </div>
         </div>
-        <div class="w-full overflow-x-auto">
+        <div class="vscroll v10">
           <table class="w-full text-left border-collapse">
             <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
               <th class="py-space-sm px-space-md w-10"><input type="checkbox" id="sel-all" class="w-4 h-4 cursor-pointer accent-[#1d4ed8]" title="Seleccionar todo lo filtrado"></th>
               <th class="py-space-sm px-space-md">Orden</th><th class="py-space-sm px-space-md">EAN-13</th>
-              <th class="py-space-sm px-space-md min-w-[260px]">Descripción</th><th class="py-space-sm px-space-md">Lote</th>
-              <th class="py-space-sm px-space-md">Vencimiento</th><th class="py-space-sm px-space-md">Ubicación</th>
+              <th class="py-space-sm px-space-md min-w-[260px]">Descripción</th><th class="py-space-sm px-space-md">Lote BPCS</th>
+              <th class="py-space-sm px-space-md min-w-[150px]">Lote físico / Venc.</th><th class="py-space-sm px-space-md">Ubicación</th>
               <th class="py-space-sm px-space-md text-center">WH</th>
               <th class="py-space-sm px-space-md text-right">Solicitado</th><th class="py-space-sm px-space-md text-right">Pendiente</th>
               <th class="py-space-sm px-space-md min-w-[130px]">Avance</th><th class="py-space-sm px-space-md text-center">Estado</th>
@@ -164,25 +166,11 @@
         </div>
         <div class="p-space-md bg-surface-container-low rounded-b-xl flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm text-on-surface-variant font-label-sm text-label-sm">
           <span id="page-info"></span>
-          <div class="flex items-center gap-1">
+          <div class="hidden items-center gap-1">
             <button id="prev" class="px-2 py-0.5 rounded bg-surface-container-lowest hover:bg-surface-container disabled:opacity-40">‹ Anterior</button>
             <span id="page-num" class="px-2 py-0.5 rounded bg-primary-container text-on-primary font-bold">1</span>
             <button id="next" class="px-2 py-0.5 rounded bg-surface-container-lowest hover:bg-surface-container disabled:opacity-40">Siguiente ›</button>
           </div>
-        </div>
-      </div>
-
-      <!-- Gráficos -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
-        <div class="lg:col-span-7 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
-          <span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Análisis comparativo</span>
-          <h3 class="font-headline-md text-headline-md mb-space-md">Unidades recolectadas por OT</h3>
-          <div id="chart-ot" class="flex flex-col gap-space-md"></div>
-        </div>
-        <div class="lg:col-span-5 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
-          <span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Capacidad</span>
-          <h3 class="font-headline-md text-headline-md mb-space-md">Distribución por Almacén</h3>
-          <div id="chart-wh" class="flex flex-col gap-space-sm"></div>
         </div>
       </div>
 
@@ -237,7 +225,19 @@
         </div>
       </div>
 
-      
+      <!-- Gráficos -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+        <div class="lg:col-span-7 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+          <span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Análisis comparativo</span>
+          <h3 class="font-headline-md text-headline-md mb-space-md">Unidades trabajadas por OT (rango)</h3>
+          <div id="chart-ot" class="flex flex-col gap-space-md"></div>
+        </div>
+        <div class="lg:col-span-5 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm">
+          <span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Capacidad</span>
+          <h3 class="font-headline-md text-headline-md mb-space-md">Distribución por Almacén (rango)</h3>
+          <div id="chart-wh" class="flex flex-col gap-space-sm"></div>
+        </div>
+      </div>
       </div><!-- /view-hist -->
     </div>
   </main>
@@ -253,7 +253,7 @@ const PAGE_SIZE  = 25;
 const COLS = {
   ot:['ORDER'], cliente:['CUSTOMERNAME'], fecha:['TRANSACTIONDATE'],
   item:['ITEMNUMBER'], desc:['ITEMDESCRIPTION'], ean:['CODIGOEAN13','EAN13'], wh:['WH'],
-  lote:['LOTNUMBER'], venc:['LOTEXPIRATIONDATE'], loc:['LOCTN'],
+  lote:['LOTNUMBER'], lotec:['LOTNUMBERCUSTOMER'], venc:['LOTEXPIRATIONDATE'], loc:['LOCTN'],
   qty:['TRANSQUANTITY','TRANSQTY'],      // SOLICITADO
   saldo:['SALDO'],                       // PENDIENTE
   fm:['FECHAMOV','FECHAM']               // FECHA MOV (histórico)
@@ -315,7 +315,7 @@ async function load(){
     DATA = rows.slice(1).map(r=>{
       const g=k=> idx[k]>-1 ? (r[idx[k]]||'').trim() : '';
       return { ot:g('ot'), cliente:g('cliente'), fecha:fmtDate(g('fecha')), item:g('item'),
-        desc:g('desc'), ean:g('ean'), wh:g('wh'), lote:g('lote'), venc:fmtDate(g('venc')), loc:g('loc'),
+        desc:g('desc'), ean:g('ean'), wh:g('wh'), lote:g('lote'), lotec:g('lotec'), venc:fmtDate(g('venc')), loc:g('loc'),
         qty:num(g('qty')), pend:num(g('saldo')), fm:parseFM(g('fm')) };
     }).filter(d=>d.ot);
     DATA.forEach((d,i)=>d.k=i);
@@ -336,7 +336,7 @@ function buildFilters(){
   const whs=[...new Set(DATA.map(d=>d.wh).filter(Boolean))].sort();
   $('filter-ot').innerHTML=`<option value="ALL">Todas las Órdenes (${ots.length})</option>`+ots.map(o=>`<option>${esc(o)}</option>`).join('');
   $('filter-date').innerHTML=`<option value="ALL">Todas las fechas</option>`+dates.map(o=>`<option>${esc(o)}</option>`).join('');
-  msRefresh('ms-d-ot'); msRefresh('ms-t-ot'); msRefresh('ms-t-est');
+  msRefresh('ms-d-ot'); msRefresh('ms-t-ean'); msRefresh('ms-t-ot'); msRefresh('ms-t-est');
   const vd=dates.filter(Boolean); ['d-from','d-to'].forEach(id=>{ $(id).min=vd[vd.length-1]||''; $(id).max=vd[0]||''; });
   $('filter-ot').value=ots.includes(state.ot)?state.ot:'ALL'; state.ot=$('filter-ot').value;
   $('filter-date').value=dates.includes(state.date)?state.date:'ALL'; state.date=$('filter-date').value;
@@ -347,22 +347,25 @@ function buildFilters(){
 function filtered(includeSearch=true){
   const q=state.q.toLowerCase();
   return DATA.filter(d=>(state.ot==='ALL'||d.ot===state.ot)&&(state.date==='ALL'||d.fecha===state.date)&&(state.wh==='ALL'||d.wh===state.wh)
-    &&(!includeSearch||!q||[d.ot,d.ean,d.item,d.desc,d.lote,d.loc,d.cliente].join(' ').toLowerCase().includes(q)));
+    &&(!includeSearch||!q||[d.ot,d.ean,d.item,d.desc,d.lote,d.lotec,d.loc,d.cliente].join(' ').toLowerCase().includes(q)));
 }
 
 /* ============ MULTI-SELECT (varias opciones a la vez) ============ */
 const MS={};
-function msInit(id, allLabel, getOpts, set, onChange){
+function msInit(id, allLabel, getOpts, set, onChange, searchable=false){
   const root=$(id);
   root.innerHTML=`<button type="button" class="ms-btn flex items-center gap-1 bg-surface-container-low hover:bg-surface-container-high pl-3 pr-2 py-1.5 rounded font-label-md text-label-md max-w-[260px]"><span class="ms-lbl truncate"></span><span class="material-symbols-outlined text-[16px]">expand_more</span></button>
-    <div class="ms-panel hidden absolute left-0 top-full mt-1 z-30 w-64 bg-surface-container-lowest rounded-xl shadow-lg border border-surface-container p-space-sm">
+    <div class="ms-panel hidden absolute left-0 top-full mt-1 z-30 w-72 bg-surface-container-lowest rounded-xl shadow-lg border border-surface-container p-space-sm">
       <div class="flex items-center justify-between mb-1 px-1 font-label-md text-label-md"><span class="text-on-surface-variant">Marca una o varias</span><button type="button" class="ms-clear text-primary hover:underline">Ver todas</button></div>
+      ${searchable?'<input type="text" class="ms-search w-full mb-1 px-2 py-1.5 bg-surface-container-low rounded font-body-md text-body-md focus:outline-none" placeholder="Buscar...">':''}
       <div class="ms-list max-h-56 overflow-y-auto flex flex-col"></div></div>`;
   MS[id]={root,allLabel,getOpts,set,onChange};
-  root.querySelector('.ms-btn').onclick=e=>{ e.stopPropagation(); const p=root.querySelector('.ms-panel'), open=p.classList.contains('hidden'); msCloseAll(); if(open) p.classList.remove('hidden'); };
+  root.querySelector('.ms-btn').onclick=e=>{ e.stopPropagation(); const p=root.querySelector('.ms-panel'), open=p.classList.contains('hidden'); msCloseAll(); if(open){ p.classList.remove('hidden'); const si=root.querySelector('.ms-search'); if(si) si.focus(); } };
   root.querySelector('.ms-panel').onclick=e=>e.stopPropagation();
   root.querySelector('.ms-clear').onclick=()=>{ set.clear(); msRefresh(id); onChange(); };
   root.querySelector('.ms-list').onchange=e=>{ const v=e.target.dataset.v; e.target.checked?set.add(v):set.delete(v); msLabel(id); onChange(); };
+  const si=root.querySelector('.ms-search');
+  if(si) si.oninput=()=>{ const q=si.value.trim().toLowerCase(); root.querySelectorAll('.ms-list label').forEach(l=>{ l.style.display = (!q||l.dataset.s.includes(q)) ? '' : 'none'; }); };
 }
 function msLabel(id){
   const m=MS[id], opts=m.getOpts(), sel=[...m.set];
@@ -370,22 +373,24 @@ function msLabel(id){
   m.root.querySelector('.ms-lbl').textContent=t;
 }
 function msRefresh(id){
-  const m=MS[id], opts=m.getOpts().map(o=>o.v);
+  const m=MS[id], list=m.getOpts(), opts=list.map(o=>o.v);
   [...m.set].forEach(v=>{ if(!opts.includes(v)) m.set.delete(v); });
-  m.root.querySelector('.ms-list').innerHTML=m.getOpts().map(o=>`<label class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-surface-container-low cursor-pointer font-body-md text-body-md"><input type="checkbox" data-v="${esc(o.v)}" class="w-4 h-4 accent-[#1d4ed8]" ${m.set.has(o.v)?'checked':''}><span>${esc(o.t)}</span></label>`).join('')||'<div class="px-2 py-2 text-on-surface-variant font-body-sm text-body-sm">Sin opciones</div>';
+  const si=m.root.querySelector('.ms-search'); if(si) si.value='';
+  m.root.querySelector('.ms-list').innerHTML=list.map(o=>`<label data-s="${esc((o.t+' '+(o.sub||'')).toLowerCase())}" class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-surface-container-low cursor-pointer font-body-md text-body-md"><input type="checkbox" data-v="${esc(o.v)}" class="w-4 h-4 shrink-0 accent-[#1d4ed8]" ${m.set.has(o.v)?'checked':''}><span class="min-w-0"><span class="block truncate">${esc(o.t)}</span>${o.sub?`<span class="block truncate text-on-surface-variant font-label-sm text-label-sm">${esc(o.sub)}</span>`:''}</span></label>`).join('')||'<div class="px-2 py-2 text-on-surface-variant font-body-sm text-body-sm">Sin opciones</div>';
   msLabel(id);
 }
 function msCloseAll(){ document.querySelectorAll('.ms-panel').forEach(p=>p.classList.add('hidden')); }
 document.addEventListener('click', msCloseAll);
 const otOpts = () => [...new Set(DATA.map(d=>d.ot))].sort().map(o=>({v:o,t:o}));
+const eanOpts = () => { const m=new Map(); DATA.forEach(d=>{ if(d.ean && !m.has(d.ean)) m.set(d.ean,d.desc); }); return [...m].sort((a,b)=>a[0].localeCompare(b[0])).map(([v,t])=>({v,t:v,sub:t})); };
 const ESTADOS = ['Completado','En proceso','Pendiente'].map(e=>({v:e,t:e}));
 function detailRows(){
-  return filtered(true).filter(d=>(!tState.ots.size||tState.ots.has(d.ot)) && (!tState.est.size||tState.est.has(estado(d))));
+  return filtered(true).filter(d=>(!tState.ean.size||tState.ean.has(d.ean)) && (!tState.ots.size||tState.ots.has(d.ot)) && (!tState.est.size||tState.est.has(estado(d))));
 }
 
 /* ============ DESGLOSE (filtros propios) ============ */
 const dState={ots:new Set(),from:'',to:''};
-const tState={ots:new Set(),est:new Set()};
+const tState={ots:new Set(),est:new Set(),ean:new Set()};
 function desgloseList(){
   const by={};
   DATA.forEach(d=>{
@@ -448,16 +453,15 @@ function render(){
 
   // Detalle
   $('row-count').textContent=fmt(rows.length)+' registros';
-  const pages=Math.max(1,Math.ceil(rows.length/PAGE_SIZE)); if(state.page>pages)state.page=pages;
-  const s=(state.page-1)*PAGE_SIZE, slice=rows.slice(s,s+PAGE_SIZE);
+  const slice=rows;
   $('detail-body').innerHTML=slice.map(d=>{const e=estado(d), dn=Math.max(0,d.qty-d.pend), p=pct(dn,d.qty);
-    return `<tr class="hover:bg-surface-container-low/60 ${selected.has(d.k)?'bg-primary-fixed/40':''}">
+    return `<tr class="h-16 hover:bg-surface-container-low/60 ${selected.has(d.k)?'bg-primary-fixed/40':''}">
     <td class="py-space-md px-space-md"><input type="checkbox" class="row-sel w-4 h-4 cursor-pointer accent-[#1d4ed8]" data-k="${d.k}" ${selected.has(d.k)?'checked':''}></td>
     <td class="py-space-md px-space-md font-semibold text-primary">${esc(d.ot)}</td>
     <td class="py-space-md px-space-md font-mono text-secondary">${esc(d.ean)}</td>
     <td class="py-space-md px-space-md"><div class="font-semibold">${esc(d.desc)}</div><div class="text-on-surface-variant font-label-sm text-label-sm font-mono">${esc(d.item)}</div></td>
     <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(d.lote)}</td>
-    <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(d.venc)}</td>
+    <td class="py-space-md px-space-md"><div class="font-semibold font-mono">${esc(d.lotec)||'—'}</div><div class="text-on-surface-variant font-label-sm text-label-sm font-mono">${esc(d.venc)||'—'}</div></td>
     <td class="py-space-md px-space-md"><span class="px-2 py-0.5 rounded bg-surface-container font-mono font-bold">${esc(d.loc)}</span></td>
     <td class="py-space-md px-space-md text-center font-mono">${esc(d.wh)}</td>
     <td class="py-space-md px-space-md text-right font-mono font-semibold">${fmt(d.qty)}</td>
@@ -466,23 +470,10 @@ function render(){
     <td class="py-space-md px-space-md text-center"><span class="inline-flex px-2.5 py-1 rounded-full ${badge(e)} font-label-sm text-label-sm font-semibold">${e}</span></td>
     <td class="py-space-md px-space-md font-mono text-on-surface-variant">${esc(d.fecha)}</td></tr>`;}).join('')||`<tr><td colspan="13" class="p-space-lg text-center text-on-surface-variant">Sin resultados</td></tr>`;
   const nSel=selected.size;
-  $('page-info').innerHTML=(rows.length?`Mostrando <strong>${s+1} - ${Math.min(s+PAGE_SIZE,rows.length)}</strong> de ${fmt(rows.length)} registros`:'0 registros')+(nSel?` • <strong class="text-primary">${fmt(nSel)} seleccionados</strong>`:'');
-  $('page-num').textContent=state.page+' / '+pages; $('prev').disabled=state.page<=1; $('next').disabled=state.page>=pages;
+  $('page-info').innerHTML=(rows.length?`<strong>${fmt(rows.length)}</strong> registros · se ven 10, desplázate para ver el resto`:'0 registros')+(nSel?` • <strong class="text-primary">${fmt(nSel)} seleccionados</strong>`:'');
   $('xls-label').textContent = nSel ? `Excel (.xls) · ${fmt(nSel)} sel.` : 'Excel (.xls)';
   const allSel = rows.length>0 && rows.every(d=>selected.has(d.k));
   $('sel-all').checked=allSel; $('sel-all').indeterminate=!allSel && rows.some(d=>selected.has(d.k));
-
-  // Gráfico por OT
-  $('chart-ot').innerHTML=list.map(o=>{const dn=Math.max(0,o.req-o.pend), p=pct(dn,o.req);
-    return `<div class="flex flex-col gap-1"><div class="flex justify-between font-label-sm text-label-sm"><span class="font-bold">${esc(o.ot)}</span><span class="font-mono font-bold">${fmt(dn)} / ${fmt(o.req)} uds (${p.toFixed(1)}%)</span></div>
-    <div class="w-full bg-surface-container rounded-full h-3 overflow-hidden"><div class="${p>=100?'bg-tertiary-container':'bg-primary-container'} h-full rounded-full transition-all duration-500" style="width:${p}%"></div></div></div>`;}).join('')||'<p class="text-on-surface-variant">Sin datos</p>';
-
-  // Gráfico por WH
-  const w={}; all.forEach(d=>{const k=d.wh||'—'; (w[k]=w[k]||{req:0,pend:0}); w[k].req+=d.qty; w[k].pend+=d.pend;});
-  const wc=['bg-primary-container','bg-secondary','bg-tertiary-container'];
-  const ent=Object.entries(w).sort((a,b)=>b[1].req-a[1].req);
-  $('chart-wh').innerHTML=`<div class="w-full bg-surface-container rounded-full h-3 flex overflow-hidden mb-space-sm">${ent.map(([k,v],i)=>`<div class="${wc[i%3]} h-full" style="width:${req?v.req/req*100:0}%"></div>`).join('')}</div>`+
-    ent.map(([k,v],i)=>`<div class="flex items-center justify-between font-label-sm text-label-sm"><div class="flex items-center gap-space-xs"><span class="w-3 h-3 rounded-full ${wc[i%3]}"></span><span class="font-bold">Planta ${esc(k)} (${req?(v.req/req*100).toFixed(1):0}%)</span></div><span class="font-mono text-on-surface-variant">${fmt(v.req)} sol. · ${fmt(v.pend)} pend.</span></div>`).join('');
 }
 
 /* ============ EXPORTAR A EXCEL (.xls) ============ */
@@ -491,13 +482,13 @@ function exportXls(){
   const base = detailRows();
   const rows = selected.size ? DATA.filter(d=>selected.has(d.k)) : base;
   if(!rows.length){ alert('No hay registros para exportar.'); return; }
-  const detalle = rows.map(d=>({ 'Orden':d.ot, 'Cliente':d.cliente, 'EAN-13':d.ean, 'Item':d.item, 'Descripción':d.desc, 'Lote':d.lote,
+  const detalle = rows.map(d=>({ 'Orden':d.ot, 'Cliente':d.cliente, 'EAN-13':d.ean, 'Item':d.item, 'Descripción':d.desc, 'Lote BPCS':d.lote, 'Lote físico':d.lotec,
     'Vencimiento':d.venc, 'Ubicación':d.loc, 'WH':d.wh, 'Solicitado':d.qty, 'Pendiente':d.pend,
     'Recolectado':Math.max(0,d.qty-d.pend), 'Avance %':+pct(Math.max(0,d.qty-d.pend),d.qty).toFixed(1), 'Estado':estado(d), 'Fecha':d.fecha }));
   const by={}; rows.forEach(d=>{const o=(by[d.ot]=by[d.ot]||{'Orden':d.ot,'Líneas':0,'Solicitado':0,'Pendiente':0}); o['Líneas']++; o['Solicitado']+=d.qty; o['Pendiente']+=d.pend;});
   const resumen = Object.values(by).map(o=>({...o,'Recolectado':Math.max(0,o['Solicitado']-o['Pendiente']),'Avance %':+pct(Math.max(0,o['Solicitado']-o['Pendiente']),o['Solicitado']).toFixed(1)}));
   const wb = XLSX.utils.book_new();
-  const ws1 = XLSX.utils.json_to_sheet(detalle); ws1['!cols']=[8,22,16,22,50,14,12,12,6,11,11,12,9,12,12].map(w=>({wch:w}));
+  const ws1 = XLSX.utils.json_to_sheet(detalle); ws1['!cols']=[8,22,16,22,50,14,16,12,12,6,11,11,12,9,12,12].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, ws1, 'Detalle');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumen), 'Resumen OT');
   XLSX.writeFile(wb, `control_ot_${new Date().toISOString().slice(0,10)}.xls`, {bookType:'biff8'});
@@ -566,6 +557,16 @@ function renderHist(){
       <td class="py-space-md px-space-md text-right font-mono font-semibold text-on-surface">${o.first?esc(o.first.txt):'—'}</td>
       <td class="py-space-md px-space-md text-right font-mono font-semibold text-on-surface">${o.last?esc(o.last.txt):'—'}</td></tr>`;
   }).join('')||`<tr><td colspan="7" class="p-space-lg text-center text-on-surface-variant">Sin datos</td></tr>`;
+
+  // Gráfico: unidades trabajadas por OT (rango)
+  $('chart-ot').innerHTML=hRows.map(o=>{ const p=pct(o.uR,o.req);
+    return `<div class="flex flex-col gap-1"><div class="flex justify-between font-label-sm text-label-sm"><span class="font-bold">${esc(o.ot)}</span><span class="font-mono font-bold">${fmt(o.uR)} / ${fmt(o.req)} uds (${p.toFixed(1)}%)</span></div>
+    <div class="w-full bg-surface-container rounded-full h-3 overflow-hidden"><div class="${p>=100?'bg-tertiary-container':'bg-primary-container'} h-full rounded-full transition-all duration-500" style="width:${p}%"></div></div></div>`;}).join('')||'<p class="text-on-surface-variant">Sin datos</p>';
+  // Gráfico: distribución por almacén (rango)
+  const w={}; DATA.forEach(d=>{ const k=d.wh||'—'; const o=(w[k]=w[k]||{req:0,uR:0}); o.req+=d.qty; if(d.fm && d.fm.day>=fromDay && d.fm.day<=toDay) o.uR+=worked(d); });
+  const wc=['bg-primary-container','bg-secondary','bg-tertiary-container'], ent=Object.entries(w).sort((x,y)=>y[1].uR-x[1].uR);
+  $('chart-wh').innerHTML=`<div class="w-full bg-surface-container rounded-full h-3 flex overflow-hidden mb-space-sm">${ent.map(([k,v],i)=>`<div class="${wc[i%3]} h-full" style="width:${totalR?v.uR/totalR*100:0}%"></div>`).join('')}</div>`+
+    ent.map(([k,v],i)=>`<div class="flex items-center justify-between font-label-sm text-label-sm"><div class="flex items-center gap-space-xs"><span class="w-3 h-3 rounded-full ${wc[i%3]}"></span><span class="font-bold">Planta ${esc(k)} (${totalR?(v.uR/totalR*100).toFixed(1):0}%)</span></div><span class="font-mono text-on-surface-variant">${fmt(v.uR)} trab. · ${fmt(v.req)} sol.</span></div>`).join('')||'<p class="text-on-surface-variant">Sin datos</p>';
 }
 function exportHist(){
   if(typeof XLSX==='undefined'){ alert('No se pudo cargar la librería de Excel.'); return; }
@@ -597,9 +598,10 @@ $('hist-xls').onclick=exportHist; $('hist-refresh').onclick=load;
 $('hist-d-from').onchange=e=>{ const v=e.target.value; let i=v?HDAYS.findIndex(d=>d>=v):0; if(i<0)i=Math.max(0,HDAYS.length-1); $('hist-from').value=i; if(+$('hist-to').value<i)$('hist-to').value=i; renderHist(); };
 $('hist-d-to').onchange=e=>{ const v=e.target.value; let i=HDAYS.length-1; if(v){ i=HDAYS.map(d=>d<=v).lastIndexOf(true); if(i<0)i=0; } $('hist-to').value=i; if(+$('hist-from').value>i)$('hist-from').value=i; renderHist(); };
 msInit('ms-d-ot','Todas las OT',otOpts,dState.ots,()=>render());
+msInit('ms-t-ean','Todos los EAN',eanOpts,tState.ean,()=>{state.page=1;render();},true);
 msInit('ms-t-ot','Todas las OT',otOpts,tState.ots,()=>{state.page=1;render();});
 msInit('ms-t-est','Todos los estados',()=>ESTADOS,tState.est,()=>{state.page=1;render();});
-msRefresh('ms-d-ot'); msRefresh('ms-t-ot'); msRefresh('ms-t-est');
+msRefresh('ms-d-ot'); msRefresh('ms-t-ean'); msRefresh('ms-t-ot'); msRefresh('ms-t-est');
 $('d-from').onchange=e=>{dState.from=e.target.value;render();};
 $('d-to').onchange=e=>{dState.to=e.target.value;render();};
 $('d-clear').onclick=()=>{dState.ots.clear();dState.from='';dState.to='';msRefresh('ms-d-ot');$('d-from').value='';$('d-to').value='';render();};
