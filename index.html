@@ -95,6 +95,7 @@
           <label class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">Desde <input type="date" id="f-from" class="bg-surface-container-low rounded px-2 py-1 font-label-md text-label-md text-on-surface focus:outline-none"></label>
           <label class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">Hasta <input type="date" id="f-to" class="bg-surface-container-low rounded px-2 py-1 font-label-md text-label-md text-on-surface focus:outline-none"></label>
           <div id="wh-buttons" class="flex items-center bg-surface-container-low p-0.5 rounded"></div>
+          <button id="f-clear" type="button" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md text-on-surface"><span class="material-symbols-outlined text-[16px]">filter_alt_off</span>Limpiar filtros</button>
         </div>
         <div class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-space-sm"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span><span id="filter-summary"></span></div>
       </div>
@@ -114,7 +115,7 @@
             <div class="relative" id="ms-d-ot"></div>
             <label class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">Desde <input type="date" id="d-from" class="bg-surface-container-low rounded px-2 py-1 font-label-md text-label-md text-on-surface focus:outline-none"></label>
             <label class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">Hasta <input type="date" id="d-to" class="bg-surface-container-low rounded px-2 py-1 font-label-md text-label-md text-on-surface focus:outline-none"></label>
-            <button id="d-clear" class="px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md">Limpiar</button>
+            <button id="d-clear" type="button" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md text-on-surface"><span class="material-symbols-outlined text-[16px]">filter_alt_off</span>Limpiar filtros</button>
           </div>
         </div>
         <div class="vscroll rounded-xl border border-surface-container">
@@ -147,6 +148,7 @@
               <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">search</span>
               <input id="table-search" class="pl-8 pr-3 py-1.5 bg-surface-container-low rounded text-body-md focus:outline-none w-64" placeholder="Filtrar por SKU, lote o ubicación..." type="text">
             </div>
+            <button id="t-clear" type="button" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md text-on-surface"><span class="material-symbols-outlined text-[16px]">filter_alt_off</span>Limpiar filtros</button>
             <button id="btn-xls2" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">file_download</span><span id="xls-label">Excel (.xls)</span></button>
           </div>
         </div>
@@ -187,7 +189,7 @@
           </div>
           <div class="flex flex-wrap items-center gap-space-sm">
             <button id="hist-refresh" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">sync</span>Actualizar</button>
-            <button id="hist-all" class="px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md">Todo el período</button>
+            <button id="hist-all" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md text-on-surface"><span class="material-symbols-outlined text-[16px]">filter_alt_off</span>Limpiar filtros</button>
             <button id="hist-xls" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">file_download</span>Excel (.xls)</button>
           </div>
         </div>
@@ -380,19 +382,20 @@ function pickWork(){
   if(workInit) return; workInit=true;
   let saved=[]; try{ saved=JSON.parse(localStorage.getItem(WORK_KEY)||'[]'); }catch(e){}
   saved.filter(o=>valid.has(o)).forEach(o=>wState.ots.add(o));
-  if(!wState.ots.size && RES.length){            // sin recuerdo: la OT con movimiento más reciente
-    const last=[...RES].sort((a,b)=>(b.mov_fin||b.fecha_fin||'').localeCompare(a.mov_fin||a.fecha_fin||''))[0];
-    wState.ots.add(last.ot);
-  }
+  if(!wState.ots.size && RES.length) wState.ots.add(latestOT());   // sin recuerdo: la OT con movimiento más reciente
+}
+function latestOT(){
+  const last=[...RES].sort((a,b)=>(b.mov_fin||b.fecha_fin||'').localeCompare(a.mov_fin||a.fecha_fin||''))[0];
+  return last ? last.ot : '';
 }
 async function loadDetail(renderAfter=true){
   const tok=++detTok, ots=[...wState.ots];
-  if(!ots.length){ DATA=[]; selected.clear(); msRefresh('ms-t-ot'); msRefresh('ms-t-ean'); if(renderAfter) render(); return; }
+  if(!ots.length){ DATA=[]; selected.clear(); msRefresh('ms-t-ean'); if(renderAfter) render(); return; }
   if(renderAfter){ setSync('Cargando detalle…'); $('detail-body').innerHTML='<tr><td colspan="13" class="h-16 text-center text-on-surface-variant">Cargando detalle de '+ots.map(esc).join(', ')+'…</td></tr>'; }
   const rows = await fetchDetalle(ots, wState.from, wState.to);
   if(tok!==detTok) return;                          // llegó una respuesta vieja: se descarta
   DATA = rows; DATA.forEach((d,i)=>d.k=i); selected.clear();
-  msRefresh('ms-t-ot'); msRefresh('ms-t-ean');
+  msRefresh('ms-t-ean');
   if(renderAfter) render();
 }
 function onWorkChange(){
@@ -451,17 +454,18 @@ function filtered(includeSearch=true){
 
 /* ============ MULTI-SELECT (varias opciones a la vez) ============ */
 const MS={};
-function msInit(id, allLabel, getOpts, set, onChange, searchable=false, clearText='Ver todas'){
+function msInit(id, allLabel, getOpts, set, onChange, searchable=false, clearText='Ver todas', allBtn=false){
   const root=$(id);
   root.innerHTML=`<button type="button" class="ms-btn flex items-center gap-1 bg-surface-container-low hover:bg-surface-container-high pl-3 pr-2 py-1.5 rounded font-label-md text-label-md max-w-[260px]"><span class="ms-lbl truncate"></span><span class="material-symbols-outlined text-[16px]">expand_more</span></button>
     <div class="ms-panel hidden absolute left-0 top-full mt-1 z-30 w-72 bg-surface-container-lowest rounded-xl shadow-lg border border-surface-container p-space-sm">
-      <div class="flex items-center justify-between mb-1 px-1 font-label-md text-label-md"><span class="text-on-surface-variant">Marca una o varias</span><button type="button" class="ms-clear text-primary hover:underline">${clearText}</button></div>
+      <div class="flex items-center justify-between mb-1 px-1 font-label-md text-label-md"><span class="text-on-surface-variant">Marca una o varias</span><span class="flex items-center gap-3">${allBtn?'<button type="button" class="ms-all text-primary hover:underline">Marcar todas</button>':''}<button type="button" class="ms-clear text-primary hover:underline">${clearText}</button></span></div>
       ${searchable?'<input type="text" class="ms-search w-full mb-1 px-2 py-1.5 bg-surface-container-low rounded font-body-md text-body-md focus:outline-none" placeholder="Buscar...">':''}
       <div class="ms-list max-h-56 overflow-y-auto flex flex-col"></div></div>`;
   MS[id]={root,allLabel,getOpts,set,onChange};
   root.querySelector('.ms-btn').onclick=e=>{ e.stopPropagation(); const p=root.querySelector('.ms-panel'), open=p.classList.contains('hidden'); msCloseAll(); if(open){ p.classList.remove('hidden'); const si=root.querySelector('.ms-search'); if(si) si.focus(); } };
   root.querySelector('.ms-panel').onclick=e=>e.stopPropagation();
   root.querySelector('.ms-clear').onclick=()=>{ set.clear(); msRefresh(id); onChange(); };
+  const ab=root.querySelector('.ms-all'); if(ab) ab.onclick=()=>{ getOpts().forEach(o=>set.add(o.v)); msRefresh(id); onChange(); };
   root.querySelector('.ms-list').onchange=e=>{ const v=e.target.dataset.v; e.target.checked?set.add(v):set.delete(v); msLabel(id); onChange(); };
   const si=root.querySelector('.ms-search');
   if(si) si.oninput=()=>{ const q=si.value.trim().toLowerCase(); root.querySelectorAll('.ms-list label').forEach(l=>{ l.style.display = (!q||l.dataset.s.includes(q)) ? '' : 'none'; }); };
@@ -485,7 +489,7 @@ const otOptsData = () => [...new Set(DATA.map(d=>d.ot))].sort().map(o=>({v:o,t:o
 const eanOpts = () => { const m=new Map(); DATA.forEach(d=>{ if(d.ean && !m.has(d.ean)) m.set(d.ean,d.desc); }); return [...m].sort((a,b)=>a[0].localeCompare(b[0])).map(([v,t])=>({v,t:v,sub:t})); };
 const ESTADOS = ['Completado','En proceso','Pendiente'].map(e=>({v:e,t:e}));
 function detailRows(){
-  return filtered(true).filter(d=>(!tState.ean.size||tState.ean.has(d.ean)) && (!tState.ots.size||tState.ots.has(d.ot)) && (!tState.est.size||tState.est.has(estado(d))));
+  return filtered(true).filter(d=>(!tState.ean.size||tState.ean.has(d.ean)) && (!tState.est.size||tState.est.has(estado(d))));
 }
 
 /* ============ DESGLOSE (filtros propios) ============ */
@@ -687,14 +691,28 @@ $('hist-all').onclick=()=>{ $('hist-from').value=0; $('hist-to').value=Math.max(
 $('hist-xls').onclick=exportHist; $('hist-refresh').onclick=loadAll;
 $('hist-d-from').onchange=e=>{ const v=e.target.value; let i=v?HDAYS.findIndex(d=>d>=v):0; if(i<0)i=Math.max(0,HDAYS.length-1); $('hist-from').value=i; if(+$('hist-to').value<i)$('hist-to').value=i; renderHist(); };
 $('hist-d-to').onchange=e=>{ const v=e.target.value; let i=HDAYS.length-1; if(v){ i=HDAYS.map(d=>d<=v).lastIndexOf(true); if(i<0)i=0; } $('hist-to').value=i; if(+$('hist-from').value>i)$('hist-from').value=i; renderHist(); };
-msInit('ms-f-ot','Elegir OT',otOpts,wState.ots,onWorkChange,true,'Limpiar');
+msInit('ms-f-ot','Elegir OT',otOpts,wState.ots,()=>{ msRefresh('ms-t-ot'); onWorkChange(); },true,'Limpiar',true);
 msInit('ms-d-ot','Todas las OT',otOpts,dState.ots,()=>render());
 msInit('ms-t-ean','Todos los EAN',eanOpts,tState.ean,()=>{state.page=1;render();},true);
-msInit('ms-t-ot','Todas las OT',otOptsData,tState.ots,()=>{state.page=1;render();});
+msInit('ms-t-ot','Elegir OT',otOpts,wState.ots,()=>{ msRefresh('ms-f-ot'); onWorkChange(); },true,'Limpiar',true);
 msInit('ms-t-est','Todos los estados',()=>ESTADOS,tState.est,()=>{state.page=1;render();});
 ['ms-f-ot','ms-d-ot','ms-t-ean','ms-t-ot','ms-t-est'].forEach(msRefresh);
 $('f-from').onchange=e=>{wState.from=e.target.value;onWorkChange();};
 $('f-to').onchange=e=>{wState.to=e.target.value;onWorkChange();};
+/* ---- Botones "Limpiar filtros" ---- */
+function clearDetailFilters(){            // filtros propios del detalle + WH + buscadores
+  tState.ean.clear(); tState.est.clear(); state.q=''; state.wh='ALL'; state.page=1;
+  $('table-search').value=''; $('global-search').value='';
+  msRefresh('ms-t-ean'); msRefresh('ms-t-est');
+}
+$('t-clear').onclick=()=>{ clearDetailFilters(); render(); };
+$('f-clear').onclick=()=>{                // tablero: fechas, WH, buscadores, EAN/estado y vuelve a la OT más reciente
+  clearDetailFilters();
+  wState.from=''; wState.to=''; $('f-from').value=''; $('f-to').value='';
+  wState.ots.clear(); if(RES.length) wState.ots.add(latestOT());
+  msRefresh('ms-f-ot'); msRefresh('ms-t-ot');
+  render(); onWorkChange();
+};
 const dReload=async()=>{ try{ await loadDRES(); render(); }catch(e){ showErr('No se pudo filtrar el desglose: '+e.message); } };
 $('d-from').onchange=e=>{dState.from=e.target.value;dReload();};
 $('d-to').onchange=e=>{dState.to=e.target.value;dReload();};
