@@ -22,6 +22,7 @@
 #sb-handle{transition:opacity .15s ease,transform .15s ease}
 #sb-handle.hide{opacity:0;pointer-events:none;transform:translateX(-100%)}
 .vscroll.v10{max-height:676px}
+.vscroll.v10s{max-height:476px}
 </style>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>tailwind.config={"darkMode":"class","theme":{"extend":{"colors":{"on-tertiary":"#ffffff","surface-container-low":"#eff4ff","outline-variant":"#c4c5d7","outline":"#747686","surface-container-highest":"#d3e4fe","tertiary-container":"#006948","secondary-container":"#dae2fd","on-secondary":"#ffffff","primary":"#0037b0","tertiary":"#004f35","error":"#ba1a1a","surface-container-lowest":"#ffffff","surface-container-high":"#dce9ff","surface":"#f8f9ff","on-primary":"#ffffff","tertiary-fixed":"#85f8c4","primary-fixed":"#dce1ff","primary-container":"#1d4ed8","on-surface":"#0b1c30","on-primary-fixed":"#001551","secondary-fixed":"#dae2fd","on-secondary-fixed":"#131b2e","on-surface-variant":"#434655","background":"#f8f9ff","surface-container":"#e5eeff","secondary":"#565e74"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"gutter-lg":"1.5rem","margin-sm":"1rem","space-md":"0.75rem","space-xl":"1.5rem","gutter":"1rem","margin-lg":"2rem","space-xs":"0.25rem","margin":"1.5rem","space-sm":"0.5rem","space-lg":"1rem"},"fontFamily":{"label-md":["Inter"],"body-md":["Inter"],"body-sm":["Inter"],"label-sm":["Inter"],"label-lg":["Inter"],"headline-xl":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"]},"fontSize":{"label-md":["11px",{"lineHeight":"16px","letterSpacing":"0.025em","fontWeight":"600"}],"body-md":["13px",{"lineHeight":"18px","fontWeight":"400"}],"label-sm":["10px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"700"}],"label-lg":["13px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"600"}],"headline-xl":["30px",{"lineHeight":"38px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-md":["18px",{"lineHeight":"24px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}]}}}}</script>
@@ -38,6 +39,8 @@
       <button data-nav="dash" class="nav-btn w-full text-left flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg"><span class="material-symbols-outlined text-[20px]">dashboard</span><span>Tablero de Control</span></button>
       <button data-nav="detalle" class="nav-btn w-full text-left flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg"><span class="material-symbols-outlined text-[20px]">inventory_2</span><span>Detalle por Lote y Ubicación</span></button>
       <button data-nav="hist" class="nav-btn w-full text-left flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg"><span class="material-symbols-outlined text-[20px]">history</span><span>Histórico OT</span></button>
+      <button data-nav="saldo" class="nav-btn w-full text-left flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg"><span class="material-symbols-outlined text-[20px]">inventory</span><span>Saldo de Inventario</span></button>
+      <button data-nav="gen" class="nav-btn w-full text-left flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg"><span class="material-symbols-outlined text-[20px]">auto_fix_high</span><span>Generador OT</span></button>
     </nav>
   </div>
   <div class="px-space-md">
@@ -116,7 +119,18 @@
             <label class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">Desde <input type="date" id="d-from" class="bg-surface-container-low rounded px-2 py-1 font-label-md text-label-md text-on-surface focus:outline-none"></label>
             <label class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">Hasta <input type="date" id="d-to" class="bg-surface-container-low rounded px-2 py-1 font-label-md text-label-md text-on-surface focus:outline-none"></label>
             <button id="d-clear" type="button" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md text-on-surface"><span class="material-symbols-outlined text-[16px]">filter_alt_off</span>Limpiar filtros</button>
+            <button id="d-tpl" type="button" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md text-on-surface"><span class="material-symbols-outlined text-[16px]">download</span>Plantilla (.xls)</button>
+            <button id="d-up" type="button" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md shadow-sm"><span class="material-symbols-outlined text-[16px]">upload_file</span>Subir OT (.xls)</button>
+            <input type="file" id="d-file" accept=".xls,.xlsx" class="hidden">
           </div>
+        </div>
+        <div id="d-up-panel" style="display:none" class="rounded-xl border border-surface-container bg-surface-container-low p-space-md flex flex-col gap-space-sm">
+          <div class="flex flex-wrap items-center justify-between gap-space-sm"><span id="d-up-title" class="font-label-lg text-label-lg font-bold text-on-surface"></span>
+            <div class="flex gap-space-sm"><button id="d-up-send" type="button" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md shadow-sm">Cargar al sheet</button><button id="d-up-cancel" type="button" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md text-on-surface">Cerrar</button></div></div>
+          <div id="d-up-msgs" class="flex flex-col gap-1 font-body-sm text-body-sm"></div>
+          <div class="overflow-x-auto rounded-lg border border-surface-container bg-surface-container-lowest"><table class="w-full text-left border-collapse">
+            <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider"><th class="px-space-md py-1">OT</th><th class="px-space-md py-1">Código</th><th class="px-space-md py-1">Descripción</th><th class="px-space-md py-1">Lote</th><th class="px-space-md py-1">Lote físico</th><th class="px-space-md py-1">Bodega</th><th class="px-space-md py-1">Ubicación</th><th class="px-space-md py-1 text-right">Cantidad</th></tr></thead>
+            <tbody id="d-up-prev" class="divide-y divide-surface-container font-body-sm text-body-sm"></tbody></table></div>
         </div>
         <div class="vscroll rounded-xl border border-surface-container">
           <table class="w-full text-left border-collapse">
@@ -242,6 +256,109 @@
         </div>
       </div>
       </div><!-- /view-hist -->
+
+      <!-- ===== Saldo de Inventario ===== -->
+      <div id="view-saldo" style="display:none" class="flex flex-col gap-space-lg">
+        <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
+          <div class="flex flex-col gap-space-xs">
+            <span class="inline-flex w-fit items-center px-space-xs py-0.5 rounded bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-wider">Inventario</span>
+            <h1 class="font-headline-xl text-headline-xl tracking-tight">Saldo de Inventario</h1>
+            <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">Saldo por bodega, ubicación, código y lote, leído de la hoja SALDO (columnas B a J).</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-space-sm">
+            <div class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container-low text-on-surface-variant font-label-md text-label-md"><span id="s-sync-dot" class="w-2 h-2 rounded-full bg-tertiary-container animate-pulse"></span><span id="s-sync-text">Sin cargar</span></div>
+            <button id="s-refresh" type="button" class="flex items-center gap-space-xs px-space-md py-2 rounded bg-surface-container hover:bg-surface-container-high font-label-lg text-label-lg shadow-sm"><span class="material-symbols-outlined text-[16px]">sync</span>Actualizar saldo</button>
+            <button id="s-xls" type="button" class="flex items-center gap-1 px-space-md py-2 rounded bg-primary-container text-on-primary hover:bg-primary font-label-lg text-label-lg shadow-sm"><span class="material-symbols-outlined text-[16px]">download</span>Exportar Excel (.xls)</button>
+          </div>
+        </div>
+        <div id="s-error" class="hidden bg-red-100 text-error p-space-md rounded-xl font-body-md text-body-md"></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-space-md" id="s-kpis"></div>
+        <div class="bg-surface-container-lowest rounded-xl shadow-sm flex flex-col">
+          <div class="p-space-lg flex flex-col xl:flex-row xl:items-center justify-between gap-space-md">
+            <h3 class="font-headline-md text-headline-md flex items-center gap-space-xs">Detalle del Saldo <span id="s-count" class="px-2 py-0.5 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-bold">0</span></h3>
+            <div class="flex flex-wrap items-center gap-space-sm">
+              <div class="relative" id="ms-s-wh"></div>
+              <div class="relative" id="ms-s-cod"></div>
+              <div class="relative" id="ms-s-lote"></div>
+              <div class="relative"><span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">search</span><input id="s-search" class="pl-8 pr-3 py-1.5 bg-surface-container-low rounded text-body-md focus:outline-none w-56" placeholder="Buscar descripción, ubicación..." type="text"></div>
+              <button id="s-clear" type="button" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md text-on-surface"><span class="material-symbols-outlined text-[16px]">filter_alt_off</span>Limpiar filtros</button>
+            </div>
+          </div>
+          <div class="vscroll v10s">
+            <table class="w-full text-left border-collapse">
+              <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+                <th class="px-space-md">Bodega</th><th class="px-space-md">Ubicación</th><th class="px-space-md">Código</th><th class="px-space-md min-w-[280px]">Descripción</th>
+                <th class="px-space-md">Lote BPCS</th><th class="px-space-md">Lote físico</th><th class="px-space-md">Expira</th><th class="px-space-md">Familia</th><th class="px-space-md text-right">Saldo</th>
+              </tr></thead>
+              <tbody id="s-body" class="divide-y divide-surface-container font-body-sm text-body-sm"></tbody>
+            </table>
+          </div>
+          <div class="p-space-md bg-surface-container-low rounded-b-xl flex flex-wrap items-center justify-between gap-space-sm text-on-surface-variant font-label-sm text-label-sm">
+            <span id="s-info"></span>
+            <button id="s-more" type="button" class="hidden px-space-sm py-1 rounded bg-surface-container-lowest hover:bg-surface-container font-label-md text-label-md text-primary">Mostrar 500 más</button>
+          </div>
+        </div>
+      </div><!-- /view-saldo -->
+
+      <!-- ===== Generador OT ===== -->
+      <div id="view-gen" style="display:none" class="flex flex-col gap-space-lg">
+        <div class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col gap-space-xs">
+          <span class="inline-flex w-fit items-center px-space-xs py-0.5 rounded bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-wider">Preparación de OT</span>
+          <h1 class="font-headline-xl text-headline-xl tracking-tight">Generador OT</h1>
+          <p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">Sube o pega el detalle del cliente (código EAN, lote, expira y UND). Se cruza con el saldo —el código del saldo lleva prefijo <strong>GY</strong> y el lote puede traer una letra final— y se sugieren las ubicaciones. Por defecto solo se usa el inventario de la bodega <strong>LT</strong>; si falta stock, se alerta.</p>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+          <div class="lg:col-span-7 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-sm">
+            <div class="flex flex-wrap items-center justify-between gap-space-sm"><span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Detalle del cliente</span>
+              <div class="flex flex-wrap gap-space-sm">
+                <button id="g-upload" type="button" class="flex items-center gap-1 px-space-md py-2 rounded bg-primary-container text-on-primary hover:bg-primary font-label-lg text-label-lg shadow-sm"><span class="material-symbols-outlined text-[16px]">upload_file</span>Subir archivo del cliente (.xls)</button>
+                <button id="g-tpl" type="button" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md text-on-surface"><span class="material-symbols-outlined text-[16px]">download</span>Plantilla cliente (.xls)</button>
+                <input type="file" id="g-file" accept=".xls,.xlsx" class="hidden">
+              </div></div>
+            <textarea id="g-input" rows="9" spellcheck="false" class="w-full font-mono text-[12px] leading-5 bg-surface-container-low rounded px-3 py-1.5 font-body-md text-body-md text-on-surface focus:outline-none focus:bg-surface-container-lowest" placeholder="CODIGO&#9;LOTE&#9;EXPIRA&#9;CANTIDAD&#10;6978931640524&#9;52FB03002B&#9;20290211&#9;8&#10;6978931641170&#9;14FA231 A&#9;20290225&#9;4"></textarea>
+            <p class="font-body-sm text-body-sm text-on-surface-variant">Orden al pegar: CÓDIGO · LOTE · EXPIRA · CANTIDAD (o con encabezados, como la plantilla del cliente). El código puede ser el EAN o el código con «GY». Si una línea no trae lote, se toma por vencimiento más próximo (FEFO).</p>
+          </div>
+          <div class="lg:col-span-5 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
+            <span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Parámetros</span>
+            <label class="flex flex-col gap-1 font-label-md text-label-md text-on-surface-variant">N° de OT (ORDER)<input id="g-ot" type="text" class="bg-surface-container-low rounded px-3 py-1.5 font-body-md text-body-md text-on-surface focus:outline-none focus:bg-surface-container-lowest" placeholder="Ej: OT036"></label>
+            <label class="flex flex-col gap-1 font-label-md text-label-md text-on-surface-variant">Nombre de la OT (CUSTOMER NAME)<input id="g-cust" type="text" class="bg-surface-container-low rounded px-3 py-1.5 font-body-md text-body-md text-on-surface focus:outline-none focus:bg-surface-container-lowest" placeholder="Ej: OT 36 IMPORTACION 25"></label>
+            <div class="flex flex-col gap-1 font-label-md text-label-md text-on-surface-variant">Bodega de donde se toma el stock<div class="relative" id="ms-g-wh"></div></div>
+            <label class="flex flex-col gap-1 font-label-md text-label-md text-on-surface-variant">Estrategia de asignación
+              <select id="g-strategy" class="bg-surface-container-low rounded px-3 py-1.5 font-body-md text-body-md text-on-surface focus:outline-none focus:bg-surface-container-lowest cursor-pointer">
+                <option value="min">Menos ubicaciones (una sola si alcanza)</option>
+                <option value="small">Vaciar saldos pequeños primero</option>
+              </select></label>
+            <div class="flex flex-wrap gap-space-sm mt-auto">
+              <button id="g-run" type="button" class="flex items-center gap-1 px-space-md py-2 rounded bg-primary-container text-on-primary hover:bg-primary font-label-lg text-label-lg shadow-sm"><span class="material-symbols-outlined text-[18px]">auto_fix_high</span>Validar y generar</button>
+              <button id="g-example" type="button" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md text-on-surface">Cargar ejemplo</button>
+              <button id="g-clear" type="button" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md text-on-surface"><span class="material-symbols-outlined text-[16px]">filter_alt_off</span>Limpiar</button>
+            </div>
+            <div id="g-msg" class="hidden p-space-sm rounded bg-red-100 text-error font-body-sm text-body-sm"></div>
+          </div>
+        </div>
+        <div id="g-results" style="display:none" class="flex flex-col gap-space-md">
+          <div id="g-alert" class="p-space-md rounded-xl font-body-md text-body-md"></div>
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-space-md" id="g-kpis"></div>
+          <div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col gap-space-md">
+            <div class="flex flex-wrap items-center justify-between gap-space-sm"><h3 class="font-headline-md text-headline-md">Validación por línea</h3>
+              <button id="g-xls" type="button" class="flex items-center gap-1 px-space-md py-2 rounded bg-primary-container text-on-primary hover:bg-primary font-label-lg text-label-lg shadow-sm"><span class="material-symbols-outlined text-[16px]">download</span>Descargar Detalle OT (.xls)</button></div>
+            <div class="vscroll v10s rounded-xl border border-surface-container"><table class="w-full text-left border-collapse">
+              <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+                <th class="px-space-md">#</th><th class="px-space-md">Código</th><th class="px-space-md min-w-[220px]">Descripción</th><th class="px-space-md">Lote cliente</th><th class="px-space-md">Expira cliente</th>
+                <th class="px-space-md text-right">Solicitado</th><th class="px-space-md text-right">Asignado</th><th class="px-space-md text-right">Faltante</th><th class="px-space-md text-center">Estado</th><th class="px-space-md min-w-[260px]">Observación</th>
+              </tr></thead><tbody id="g-val-body" class="divide-y divide-surface-container font-body-sm text-body-sm"></tbody></table></div>
+          </div>
+          <div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col gap-space-md">
+            <h3 class="font-headline-md text-headline-md">Ubicaciones sugeridas <span id="g-asg-count" class="px-2 py-0.5 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-bold">0</span></h3>
+            <div class="vscroll v10s rounded-xl border border-surface-container"><table class="w-full text-left border-collapse">
+              <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+                <th class="px-space-md">Línea</th><th class="px-space-md">Bodega</th><th class="px-space-md">Ubicación</th><th class="px-space-md">Código</th><th class="px-space-md min-w-[220px]">Descripción</th>
+                <th class="px-space-md">Lote BPCS</th><th class="px-space-md">Lote físico</th><th class="px-space-md">Expira</th>
+                <th class="px-space-md text-right">Tomar</th><th class="px-space-md text-right">Saldo ubic.</th><th class="px-space-md text-right">Quedaría</th>
+              </tr></thead><tbody id="g-asg-body" class="divide-y divide-surface-container font-body-sm text-body-sm"></tbody></table></div>
+          </div>
+        </div>
+      </div><!-- /view-gen -->
     </div>
   </main>
 </div>
@@ -718,6 +835,418 @@ $('d-from').onchange=e=>{dState.from=e.target.value;dReload();};
 $('d-to').onchange=e=>{dState.to=e.target.value;dReload();};
 $('d-clear').onclick=()=>{dState.ots.clear();dState.from='';dState.to='';msRefresh('ms-d-ot');$('d-from').value='';$('d-to').value='';dReload();};
 
+/* ============ SALDO DE INVENTARIO ============ */
+const SALDO_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0j0wNt1izjNQdp1SAQYbtVz2n1hiZkUVvGC8Q4AbGgxOoITwNMbxUJ4KrKcYyM8QhIF4srhmNeYND/pub?gid=273620597&single=true&output=csv";
+const SCOLS = { wh:['WHS','WH'], loc:['UBICACION','LOCTN'], cod:['CODIGO'], desc:['DESC','DESCRIPCION'], loteB:['LOTEBPCS'], loteF:['LOTEFISICO'], exp:['EXPIRA'], fam:['FAMILIA'], saldo:['SALDO'] };
+let SALDO=[], saldoAt=0, saldoBusy=false;
+const sState={wh:new Set(),cod:new Set(),lote:new Set(),q:'',shown:500};
+const nk = s => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+function sMsg(t,err){ $('s-sync-text').textContent=t; $('s-sync-dot').className='w-2 h-2 rounded-full '+(err?'bg-error':'bg-tertiary-container animate-pulse'); }
+
+async function loadSaldo(){
+  if(saldoBusy) return; saldoBusy=true; sMsg('Cargando saldo…'); $('s-error').classList.add('hidden');
+  try{
+    const res=await fetch(SALDO_CSV_URL+'&_='+Date.now()); if(!res.ok) throw new Error('HTTP '+res.status);
+    const rows=parseCSV(await res.text()); if(!rows.length) throw new Error('La hoja está vacía');
+    const H=rows[0].slice(0,10), idx={};                       // solo columnas A..J (así "EXPIRA." de la col. R no estorba)
+    for(const k in SCOLS) idx[k]=findCol(H,SCOLS[k]);
+    const miss=['cod','loc','saldo'].filter(k=>idx[k]<0);
+    if(miss.length) throw new Error('No encontré las columnas: '+miss.join(', ')+' (deben estar entre la A y la J).');
+    const g=(r,k)=> idx[k]>-1 ? (r[idx[k]]||'').trim() : '';
+    SALDO=rows.slice(1).map(r=>{
+      const o={wh:g(r,'wh'),loc:g(r,'loc'),cod:g(r,'cod'),desc:g(r,'desc'),loteB:g(r,'loteB'),loteF:g(r,'loteF'),exp:g(r,'exp').replace(/[^0-9]/g,''),fam:g(r,'fam'),saldo:num(g(r,'saldo'))};
+      o.cN=nk(o.cod); o.cK=stripGY(o.cN); o.lbN=nk(o.loteB); o.lfN=nk(o.loteF); o.lbB=baseLote(o.loteB); o.lfB=baseLote(o.loteF); o.hay=[o.wh,o.loc,o.cod,o.desc,o.loteB,o.loteF,o.fam].join(' ').toLowerCase(); return o;
+    }).filter(o=>o.cod);
+    saldoAt=Date.now(); sMsg('Sincronizado: '+hhmm());
+    ['ms-s-wh','ms-s-cod','ms-s-lote','ms-g-wh'].forEach(msRefresh);
+    renderSaldo();
+  }catch(e){ $('s-error').textContent='⚠️ No se pudo leer el saldo: '+e.message; $('s-error').classList.remove('hidden'); sMsg('Error de sincronización',true); }
+  finally{ saldoBusy=false; }
+}
+function openSaldo(){ if(!SALDO.length || Date.now()-saldoAt>REFRESH_MS) loadSaldo(); }
+
+const sWhOpts = () => [...new Set(SALDO.map(r=>r.wh).filter(Boolean))].sort().map(v=>({v,t:v}));
+const sCodOpts = () => { const m=new Map(); SALDO.forEach(r=>{ if(!m.has(r.cod)) m.set(r.cod,r.desc); }); return [...m].sort((a,b)=>a[0].localeCompare(b[0])).map(([v,d])=>({v,t:v,sub:d})); };
+const sLoteOpts = () => { const m=new Map(); SALDO.forEach(r=>{ if(r.loteB && !m.has(r.loteB)) m.set(r.loteB,'Lote BPCS'); }); SALDO.forEach(r=>{ if(r.loteF && !m.has(r.loteF)) m.set(r.loteF,'Lote físico'); });
+  return [...m].sort((a,b)=>a[0].localeCompare(b[0])).map(([v,t])=>({v,t:v,sub:t})); };
+
+function filteredSaldo(){
+  const q=sState.q.toLowerCase();
+  return SALDO.filter(r=>(!sState.wh.size||sState.wh.has(r.wh)) && (!sState.cod.size||sState.cod.has(r.cod))
+    && (!sState.lote.size||sState.lote.has(r.loteB)||sState.lote.has(r.loteF)) && (!q||r.hay.includes(q)));
+}
+function renderSaldo(){
+  const rows=filteredSaldo(), tot=rows.reduce((s,r)=>s+r.saldo,0);
+  $('s-kpis').innerHTML=[
+    kpi('Registros','list_alt',fmt(rows.length),`de ${fmt(SALDO.length)} en el saldo`),
+    kpi('Saldo total','inventory_2',fmt(tot),'unidades'),
+    kpi('Códigos','barcode_scanner',fmt(new Set(rows.map(r=>r.cN)).size),'únicos'),
+    kpi('Ubicaciones','warehouse',fmt(new Set(rows.map(r=>r.wh+'|'+r.loc)).size),'con registro'),
+    kpi('Lotes','fact_check',fmt(new Set(rows.map(r=>r.lbN||r.lfN)).size),'distintos')].join('');
+  $('s-count').textContent=fmt(rows.length)+' registros';
+  const slice=rows.slice(0,sState.shown);
+  $('s-body').innerHTML=slice.map(r=>`<tr class="h-11 hover:bg-surface-container-low/60">
+    <td class="px-space-md font-mono">${esc(r.wh)}</td>
+    <td class="px-space-md"><span class="px-2 py-0.5 rounded bg-surface-container font-mono font-bold">${esc(r.loc)}</span></td>
+    <td class="px-space-md font-mono text-secondary">${esc(r.cod)}</td>
+    <td class="px-space-md"><div class="max-w-[420px] truncate" title="${esc(r.desc)}">${esc(r.desc)}</div></td>
+    <td class="px-space-md font-mono text-on-surface-variant">${esc(r.loteB)}</td>
+    <td class="px-space-md font-mono text-on-surface-variant">${esc(r.loteF)}</td>
+    <td class="px-space-md font-mono text-on-surface-variant">${esc(fmtDate(r.exp))}</td>
+    <td class="px-space-md text-on-surface-variant">${esc(r.fam)}</td>
+    <td class="px-space-md text-right font-mono font-bold ${r.saldo<=0?'text-error':''}">${fmt(r.saldo)}</td></tr>`).join('')
+    ||`<tr><td colspan="9" class="h-16 text-center text-on-surface-variant">${SALDO.length?'Sin resultados para esos filtros':'Sin datos'}</td></tr>`;
+  $('s-info').innerHTML=rows.length?`Mostrando <strong>${fmt(slice.length)}</strong> de ${fmt(rows.length)} registros · se ven 10, desplázate para ver el resto`:'0 registros';
+  $('s-more').classList.toggle('hidden', rows.length<=slice.length);
+}
+function exportSaldo(){
+  if(typeof XLSX==='undefined'){ alert('No se pudo cargar la librería de Excel.'); return; }
+  const rows=filteredSaldo(); if(!rows.length){ alert('No hay registros para exportar.'); return; }
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.map(r=>({'Bodega':r.wh,'Ubicación':r.loc,'Código':r.cod,'Descripción':r.desc,'Lote BPCS':r.loteB,'Lote físico':r.loteF,'Expira':fmtDate(r.exp),'Familia':r.fam,'Saldo':r.saldo}))), 'Saldo');
+  XLSX.writeFile(wb, `saldo_${new Date().toISOString().slice(0,10)}.xls`, {bookType:'biff8'});
+}
+
+msInit('ms-s-wh','Todas las bodegas',sWhOpts,sState.wh,()=>{sState.shown=500;renderSaldo();});
+msInit('ms-s-cod','Todos los códigos',sCodOpts,sState.cod,()=>{sState.shown=500;renderSaldo();},true);
+msInit('ms-s-lote','Todos los lotes',sLoteOpts,sState.lote,()=>{sState.shown=500;renderSaldo();},true);
+$('s-search').oninput=e=>{ sState.q=e.target.value; sState.shown=500; renderSaldo(); };
+$('s-clear').onclick=()=>{ sState.wh.clear(); sState.cod.clear(); sState.lote.clear(); sState.q=''; sState.shown=500; $('s-search').value=''; ['ms-s-wh','ms-s-cod','ms-s-lote'].forEach(msRefresh); renderSaldo(); };
+$('s-more').onclick=()=>{ sState.shown+=500; renderSaldo(); };
+$('s-refresh').onclick=loadSaldo; $('s-xls').onclick=exportSaldo;
+
+/* ============ GENERADOR OT ============ */
+const gState={wh:new Set(['LT'])};            // por defecto solo inventario de la bodega LT
+let G={val:[],asg:[]}, gCustDirty=false;
+const stripGY = x => String(x||'').replace(/^GY/,'');
+const baseLote = v => nk(String(v||'').trim().replace(/\s+[A-Za-z]$/,''));        // "11FC09A A" -> "11FC09A"
+const gWhOpts = () => [...new Set(['LT',...SALDO.map(r=>r.wh).filter(Boolean)])].sort().map(v=>({v,t:v}));
+msInit('ms-g-wh','Todas las bodegas',gWhOpts,gState.wh,()=>{},false,'Todas');
+msRefresh('ms-g-wh');
+const ymdToday = () => { const d=new Date(), p=n=>('0'+n).slice(-2); return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()); };
+const custFromOT = ot => { const m=String(ot||'').match(/(\d+)/); return m ? `OT ${parseInt(m[1],10)} IMPORTACION 25` : ''; };
+const numOrStr = v => /^\d{1,15}$/.test(String(v)) ? Number(v) : v;
+
+/* ---- Plantillas (.xls) ---- */
+const CLIENT_HEADERS=['N° ITEM (3)','CODIGO (4)','NOMBRE DEL PRODUCTO (5)','PRESENTACION DEL PRODUCTO (6)','LOTE (7)','EXPIRA (8)','REGISTRO SANITARIO (9)','TEXTO A IMPRIMIR (10)','A','B','UND (11)'];
+const OT_HEADERS=['ID_DETALLE','ORDER','TRANS TYPE','ORDER INVOICE NUMBER','ID_TICKET','TRANS COMMENT','TRANSACTION DATE','OP NBR','CUST','CUSTOMER NAME','LINE NBR','SEQ NUMBR','REASN CODE','ITEM NUMBER','ITEM DESCRIPTION','CÓDIGO EAN-13','WHSE','LOT NUMBER','LOT EXPIRATION DATE','LOT NUMBER CUSTOMER','ANALISIS','LOCTN','TRANS QUANTITY','FACTOR EMPAQUE','NRO CAJA','UNID SALDO','WGT/UNIT OF MEASR','ITM VOLUME','COMMENT','SALDO','FECHA MOV','ESTATUS_LOTE','LOTE ACTUAL','EXPIRA ACTUAL','LPN DESTINO','CANT','USUARIO','NOM_USUARIO','EQUIPO'];
+function xlsOK(){ if(typeof XLSX==='undefined'){ alert('No se pudo cargar la librería de Excel. Revisa tu conexión.'); return false; } return true; }
+function saveXls(wb,name){ XLSX.writeFile(wb, String(name).replace(/\.xlsx?$/i,'')+'.xls', {bookType:'biff8'}); }
+function tplCliente(){
+  if(!xlsOK()) return;
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([CLIENT_HEADERS,[1,'6978931640524','SHEGLAM LASHLIGHTER MEGA BOOST MASCARA-BLACK',8,'52FB03002B','20290211','NSOC49950-26CO','IMPORTADO POR: GLIMMER CARE PERU SAC','NSOC49950-26CO','MASCARA DE PESTAÑAS',8]]);
+  ws['!cols']=[8,16,48,14,16,12,20,34,18,22,8].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws, 'PLANTILLA');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['PLANTILLA DEL CLIENTE — INSTRUCCIONES'],[''],
+    ['CODIGO (4): código de barras EAN-13. En el saldo el código interno es "GY" + EAN.'],
+    ['LOTE (7): lote físico. A veces lleva una letra final después de un espacio (ej. 11FC09A A).'],
+    ['EXPIRA (8): vencimiento en formato AAAAMMDD.'],['UND (11): cantidad solicitada en unidades.'],
+    ['Borra la fila de ejemplo antes de enviar el archivo. Súbelo en Generador OT.']]), 'INSTRUCCIONES');
+  saveXls(wb,'Plantilla_cliente_OT');
+}
+function tplOT(){
+  if(!xlsOK()) return;
+  const wb=XLSX.utils.book_new(), ws=XLSX.utils.aoa_to_sheet([OT_HEADERS]);
+  ws['!cols']=OT_HEADERS.map(h=>({wch:Math.max(10,h.length+2)}));
+  XLSX.utils.book_append_sheet(wb, ws, 'DETALLE PEDIDO');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['PLANTILLA DETALLE DE OT — INSTRUCCIONES'],[''],
+    ['Se llena una fila por cada ubicación de donde se toma stock. El Generador OT ya entrega el archivo en este formato.'],
+    ['Obligatorios: ORDER, ITEM NUMBER, TRANS QUANTITY. Recomendados: WHSE, LOT NUMBER, LOT NUMBER CUSTOMER, LOCTN, LOT EXPIRATION DATE.'],
+    ['Si TRANSACTION DATE, SALDO o COMMENT van vacíos, el tablero los completa (fecha de hoy, SALDO = TRANS QUANTITY, COMMENT = ORDER).'],
+    ['ID_DETALLE se deja vacío: el sistema asigna el correlativo al cargar.'],
+    ['Súbelo en Desglose por Orden de Trabajo > Subir OT (.xls).']]), 'INSTRUCCIONES');
+  saveXls(wb,'Plantilla_detalle_OT');
+}
+
+/* ---- Lectura de archivos y del texto pegado ---- */
+function readFileRows(file, prefSheet){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader(); fr.onerror=()=>rej(new Error('No se pudo leer el archivo.'));
+    fr.onload=()=>{ try{
+      const wb=XLSX.read(new Uint8Array(fr.result),{type:'array'});
+      const name=(prefSheet&&wb.SheetNames.includes(prefSheet))?prefSheet:wb.SheetNames[0];
+      res({rows:XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,defval:''}),sheet:name});
+    }catch(e){ rej(e); } };
+    fr.readAsArrayBuffer(file);
+  });
+}
+function splitCells(l){
+  if(l.includes('\t')) return l.split('\t').map(x=>x.trim());
+  if(l.includes(';'))  return l.split(';').map(x=>x.trim());
+  if((l.match(/,/g)||[]).length>=2) return l.split(',').map(x=>x.trim());
+  return l.trim().split(/\s+/);
+}
+function parseQty(v){ let t=String(v==null?'':v).replace(/\s/g,''); if(/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) t=t.replace(/,/g,''); else t=t.replace(',','.'); const n=parseFloat(t); return isFinite(n)?n:NaN; }
+function serialToYMD(n){ const d=new Date(Math.round((n-25569)*864e5)), p=x=>('0'+x).slice(-2); return d.getUTCFullYear()+p(d.getUTCMonth()+1)+p(d.getUTCDate()); }
+function toYMD(v){                      // → yyyymmdd (o yyyymm si solo viene mes/año)
+  if(typeof v==='number' && v>30000 && v<80000) return serialToYMD(v);          // fecha serial de Excel
+  v=String(v==null?'':v).trim(); if(!v) return ''; let m;
+  if(/^\d{5}$/.test(v) && +v>30000 && +v<80000) return serialToYMD(+v);
+  if((m=v.match(/^(\d{4})[\/\-.](\d{1,2})(?:[\/\-.](\d{1,2}))?$/))) return m[1]+('0'+m[2]).slice(-2)+(m[3]?('0'+m[3]).slice(-2):'');
+  if((m=v.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/)))       return m[3]+('0'+m[2]).slice(-2)+('0'+m[1]).slice(-2);   // dd/mm/yyyy
+  if((m=v.match(/^(\d{1,2})[\/\-.](\d{4})$/)))                        return m[2]+('0'+m[1]).slice(-2);
+  const d=v.replace(/\D/g,'');
+  if(/^\d{8}$/.test(d)) return (+d.slice(0,4)>=1990 && +d.slice(0,4)<=2100) ? d : d.slice(4)+d.slice(2,4)+d.slice(0,2);
+  if(/^\d{6}$/.test(d)) return d;
+  return '';
+}
+function parseRows(rows){
+  const out=[], errs=[], clean=rows.map(r=>r.map(c=>typeof c==='string'?c.trim():c));
+  const isHdr=cells=>cells.map(nk).filter(x=>/^(CODIGO|COD|SKU|ITEM|ARTICULO|LOTE|EXPIRA|EXPIRACION|VENCIMIENTO|VENCE|VTO|CADUC|CANT|CANTIDAD|UNIDADES|UND|QTY)/.test(x)).length>=2;
+  let hi=-1; for(let i=0;i<Math.min(clean.length,10);i++){ if(isHdr(clean[i])){ hi=i; break; } }
+  let map=null;
+  if(hi>-1){
+    const n0=clean[hi].map(nk);
+    map={ cod:n0.findIndex(x=>/^(CODIGO|COD|SKU|ARTICULO|ITEM)/.test(x)), lote:n0.findIndex(x=>/^LOTE/.test(x)),
+          exp:n0.findIndex(x=>/^(EXPIRA|EXPIRACION|VENCIMIENTO|VENCE|VTO|CADUC)/.test(x)), qty:n0.findIndex(x=>/^(CANT|CANTIDAD|UNIDADES|UND|QTY)/.test(x)),
+          desc:n0.findIndex(x=>/^(NOMBRE|DESCRIPCION|DESC|PRODUCTO)/.test(x)) };
+    if(map.cod<0||map.qty<0){ errs.push('Con encabezados necesito al menos las columnas CÓDIGO y CANTIDAD (UND).'); return {out,errs}; }
+  }
+  for(let i=(hi>-1?hi+1:0);i<clean.length;i++){
+    const c=clean[i]; if(!c.some(x=>String(x).trim()!=='')) continue;
+    let cod,lote='',exp='',q,desc='';
+    if(map){ cod=c[map.cod]; lote=map.lote>-1?c[map.lote]:''; exp=map.exp>-1?c[map.exp]:''; q=c[map.qty]; desc=map.desc>-1?c[map.desc]:''; }
+    else if(c.length===4) [cod,lote,exp,q]=c;
+    else if(c.length===3) [cod,lote,q]=c;
+    else if(c.length===2) [cod,q]=c;
+    else { errs.push(`Línea ${i+1}: no entiendo las ${c.length} columnas. Usa CÓDIGO, LOTE, EXPIRA, CANTIDAD o agrega encabezados.`); continue; }
+    const qty=parseQty(q), codS=String(cod==null?'':cod).trim();
+    if(!codS || !isFinite(qty) || qty<=0){ errs.push(`Línea ${i+1}: código o cantidad inválidos («${c.slice(0,4).join(' ').slice(0,45)}»).`); continue; }
+    const g=stripGY(codS.toUpperCase());
+    out.push({n:out.length+1, cod:codS, cN:nk(codS), cK:stripGY(nk(codS)), ean:/^\d{8,14}$/.test(g)?g:'',
+      lote:String(lote==null?'':lote).trim(), lN:nk(lote), lB:baseLote(lote), exp:toYMD(exp), expRaw:String(exp==null?'':exp).trim(),
+      qty, desc:String(desc==null?'':desc).replace(/[\t\r\n]+/g,' ').trim()});
+  }
+  return {out,errs};
+}
+const parseRequest = text => parseRows(text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(splitCells));
+
+/* ---- Asignación ---- */
+function generar(lines, whSet, strategy){
+  const rem=SALDO.map(r=>r.saldo), byCod=new Map(), val=[], asg=[];
+  const whTxt = whSet.size ? [...whSet].join('/') : 'todas las bodegas';
+  SALDO.forEach((r,i)=>{ if(!byCod.has(r.cK)) byCod.set(r.cK,[]); byCod.get(r.cK).push(i); });
+  const cmpLoc=(a,b)=>String(SALDO[a].loc).localeCompare(String(SALDO[b].loc));
+  const otras=pool=>{ const m={}; pool.forEach(i=>{ const r=SALDO[i]; if(whSet.size && !whSet.has(r.wh) && rem[i]>0) m[r.wh||'—']=(m[r.wh||'—']||0)+rem[i]; });
+    const t=Object.entries(m).map(([k,v])=>k+' '+fmt(v)).join(', '); return t?` Hay stock en otra bodega (no se asignó): ${t}.`:''; };
+  const take=(group,need,L,v)=>{
+    let arr=group.filter(i=>rem[i]>0);
+    while(need>0 && arr.length){
+      let pick;
+      if(strategy==='small'){ arr.sort((a,b)=>rem[a]-rem[b]||cmpLoc(a,b)); pick=arr[0]; }
+      else { const fit=arr.filter(i=>rem[i]>=need).sort((a,b)=>rem[a]-rem[b]||cmpLoc(a,b)); pick=fit.length?fit[0]:arr.sort((a,b)=>rem[b]-rem[a]||cmpLoc(a,b))[0]; }
+      const t=Math.min(rem[pick],need), r=SALDO[pick];
+      asg.push({n:L.n,cod:r.cod,ean:L.ean,desc:r.desc||L.desc,loteB:r.loteB,loteF:r.loteF,exp:r.exp,wh:r.wh,loc:r.loc,tomar:t,saldoU:rem[pick],resta:rem[pick]-t});
+      rem[pick]-=t; need-=t; arr=arr.filter(i=>rem[i]>0);
+    }
+    return need;
+  };
+  lines.forEach(L=>{
+    const v={n:L.n,cod:L.cod,desc:L.desc,lote:L.lote,exp:L.expRaw,qty:L.qty,asignado:0,falta:L.qty,estado:'SIN STOCK',obs:[]};
+    val.push(v);
+    const idxs=byCod.get(L.cK)||[];
+    if(!idxs.length){ v.obs.push('El código no existe en el saldo (se buscó tal cual y con el prefijo GY).'); return; }
+    v.desc=SALDO[idxs[0]].desc||L.desc;
+    let pool=idxs;
+    if(L.lN){
+      pool=idxs.filter(i=>SALDO[i].lbN===L.lN||SALDO[i].lfN===L.lN);                         // 1) lote exacto
+      if(!pool.length){
+        pool=idxs.filter(i=>SALDO[i].lbB===L.lB||SALDO[i].lfB===L.lB);                       // 2) sin la letra final
+        if(pool.length) v.obs.push(`Lote «${L.lote}» coincide con «${[...new Set(pool.map(i=>SALDO[i].loteF||SALDO[i].loteB))].slice(0,3).join(', ')}» del saldo (distinta letra final).`);
+      }
+      if(!pool.length){
+        const av=[...new Set(idxs.filter(i=>rem[i]>0).map(i=>(SALDO[i].loteB||'—')+(SALDO[i].loteF?' / '+SALDO[i].loteF:'')+' ('+fmt(rem[i])+')'))].slice(0,5);
+        v.obs.push(`Lote «${L.lote}» no encontrado para este código.`+(av.length?` Disponibles: ${av.join(', ')}${idxs.length>5?'…':''}`:'')); return;
+      }
+    }
+    if(L.exp){
+      const m=pool.filter(i=>SALDO[i].exp.startsWith(L.exp));
+      if(m.length) pool=m; else v.obs.push(`Expira ${fmtDate(L.exp)||L.expRaw} no coincide con el saldo (${[...new Set(pool.map(i=>fmtDate(SALDO[i].exp)))].slice(0,3).join(', ')}); se usó el lote igualmente.`);
+    }
+    const allowed=pool.filter(i=>!whSet.size||whSet.has(SALDO[i].wh));
+    if(!allowed.length){ v.obs.push(`SIN STOCK en ${whTxt}.`+otras(pool)); return; }
+    if(!allowed.some(i=>rem[i]>0)){ v.obs.push(`SIN STOCK en ${whTxt}: el saldo ya se asignó a otras líneas de esta OT (o está en 0).`+otras(pool)); return; }
+    const groups=[...new Set(allowed.map(i=>SALDO[i].exp))].sort().map(e=>allowed.filter(i=>SALDO[i].exp===e));   // FEFO
+    let need=L.qty; for(const g of groups){ if(need<=0) break; need=take(g,need,L,v); }
+    v.asignado=L.qty-need; v.falta=need;
+    v.estado = need<=0 ? 'OK' : 'PARCIAL';
+    const nUb=asg.filter(a=>a.n===L.n).length;
+    if(need>0) v.obs.push(`Faltan ${fmt(need)} uds en ${whTxt}.`+otras(pool));
+    if(nUb>1) v.obs.push(`Se reparte en ${nUb} ubicaciones.`);
+  });
+  return {val,asg,whTxt};
+}
+
+const gBadge = e => e==='OK' ? 'bg-tertiary-fixed text-tertiary' : e==='PARCIAL' ? 'bg-secondary-fixed text-on-secondary-fixed' : 'bg-red-100 text-error';
+const gMsg = t => { const m=$('g-msg'); m.textContent=t; m.classList.toggle('hidden',!t); };
+async function ensureSaldo(){ if(SALDO.length) return true; openSaldo(); for(let i=0;i<50 && !SALDO.length;i++) await new Promise(r=>setTimeout(r,200)); return SALDO.length>0; }
+
+async function runGen(){
+  gMsg('');
+  if(!(await ensureSaldo())){ gMsg('No se pudo cargar el saldo. Revisa la conexión o abre «Saldo de Inventario» para ver el error.'); return; }
+  const {out,errs}=parseRequest($('g-input').value);
+  if(!out.length){ gMsg(errs.length?errs.join(' '):'Pega o sube primero el detalle del cliente.'); $('g-results').style.display='none'; return; }
+  if(errs.length) gMsg('Se omitieron líneas: '+errs.join(' '));
+  G=generar(out, gState.wh, $('g-strategy').value);
+  const sol=G.val.reduce((s,v)=>s+v.qty,0), asi=G.val.reduce((s,v)=>s+v.asignado,0), ok=G.val.filter(v=>v.estado==='OK').length;
+  const bad=G.val.filter(v=>v.estado!=='OK');
+  const al=$('g-alert');
+  if(bad.length){
+    al.className='p-space-md rounded-xl font-body-md text-body-md bg-red-100 text-error';
+    al.innerHTML=`⚠️ <strong>ALERTA: no hay stock completo en ${esc(G.whTxt)}</strong> para ${bad.length} de ${G.val.length} líneas (faltan ${fmt(sol-asi)} uds). `+
+      bad.slice(0,8).map(v=>`#${v.n} ${esc(v.cod)} (falta ${fmt(v.falta)})`).join(' · ')+(bad.length>8?` · … y ${bad.length-8} más`:'');
+  } else {
+    al.className='p-space-md rounded-xl font-body-md text-body-md bg-tertiary-fixed text-tertiary';
+    al.innerHTML=`✔ Todas las líneas (${G.val.length}) tienen stock en ${esc(G.whTxt)}.`;
+  }
+  $('g-kpis').innerHTML=[
+    kpi('Líneas','list_alt',fmt(G.val.length),`${fmt(ok)} completas`),
+    kpi('Solicitado','shopping_cart_checkout',fmt(sol),'unidades'),
+    kpi('Asignado','output',fmt(asi),'unidades con ubicación'),
+    kpi('Faltante','pending_actions',fmt(sol-asi),`${fmt(bad.length)} líneas con novedad`),
+    kpi('Ubicaciones','warehouse',fmt(new Set(G.asg.map(a=>a.wh+'|'+a.loc)).size),'distintas a visitar'),
+    kpi('Cobertura','verified',(sol?asi/sol*100:0).toFixed(1)+'%','del pedido',bar(sol?asi/sol*100:0,'bg-tertiary'))].join('');
+  $('g-val-body').innerHTML=G.val.map(v=>`<tr class="min-h-[44px] hover:bg-surface-container-low/60 align-top">
+    <td class="px-space-md py-2 font-mono text-on-surface-variant">${v.n}</td><td class="px-space-md py-2 font-mono text-secondary">${esc(v.cod)}</td>
+    <td class="px-space-md py-2">${esc(v.desc)||'—'}</td><td class="px-space-md py-2 font-mono">${esc(v.lote)||'—'}</td><td class="px-space-md py-2 font-mono">${esc(v.exp)||'—'}</td>
+    <td class="px-space-md py-2 text-right font-mono font-semibold">${fmt(v.qty)}</td><td class="px-space-md py-2 text-right font-mono font-semibold text-tertiary">${fmt(v.asignado)}</td>
+    <td class="px-space-md py-2 text-right font-mono font-semibold ${v.falta>0?'text-error':'text-on-surface-variant'}">${fmt(v.falta)}</td>
+    <td class="px-space-md py-2 text-center"><span class="inline-flex px-2.5 py-1 rounded-full ${gBadge(v.estado)} font-label-sm text-label-sm font-semibold">${v.estado}</span></td>
+    <td class="px-space-md py-2 text-on-surface-variant">${v.obs.map(esc).join(' ')||'—'}</td></tr>`).join('');
+  $('g-asg-count').textContent=G.asg.length;
+  $('g-asg-body').innerHTML=G.asg.map(a=>`<tr class="h-11 hover:bg-surface-container-low/60">
+    <td class="px-space-md font-mono text-on-surface-variant">${a.n}</td><td class="px-space-md font-mono">${esc(a.wh)}</td>
+    <td class="px-space-md"><span class="px-2 py-0.5 rounded bg-surface-container font-mono font-bold">${esc(a.loc)}</span></td>
+    <td class="px-space-md font-mono text-secondary">${esc(a.cod)}</td><td class="px-space-md"><div class="max-w-[320px] truncate" title="${esc(a.desc)}">${esc(a.desc)}</div></td>
+    <td class="px-space-md font-mono text-on-surface-variant">${esc(a.loteB)}</td><td class="px-space-md font-mono text-on-surface-variant">${esc(a.loteF)}</td><td class="px-space-md font-mono text-on-surface-variant">${esc(fmtDate(a.exp))}</td>
+    <td class="px-space-md text-right font-mono font-bold text-primary">${fmt(a.tomar)}</td><td class="px-space-md text-right font-mono">${fmt(a.saldoU)}</td><td class="px-space-md text-right font-mono text-on-surface-variant">${fmt(a.resta)}</td></tr>`).join('')
+    ||'<tr><td colspan="11" class="h-16 text-center text-on-surface-variant">Ninguna línea pudo asignarse. Revisa las observaciones.</td></tr>';
+  $('g-results').style.display='';
+  if($('g-results').scrollIntoView) $('g-results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ---- Detalle de OT en el formato de DETALLE PEDIDO (.xls) ---- */
+function buildOTRows(ot,cust){
+  const hoy=Number(ymdToday());
+  return G.asg.map(a=>{
+    const r={}; OT_HEADERS.forEach(h=>r[h]='');
+    Object.assign(r,{'ORDER':ot,'TRANSACTION DATE':hoy,'CUSTOMER NAME':cust,'ITEM NUMBER':a.cod,'ITEM DESCRIPTION':a.desc,
+      'CÓDIGO EAN-13':a.ean?numOrStr(a.ean):'','WHSE':a.wh,'LOT NUMBER':numOrStr(a.loteB),'LOT EXPIRATION DATE':a.exp?Number(a.exp):'',
+      'LOT NUMBER CUSTOMER':a.loteF,'ANALISIS':a.exp?Number(a.exp):'','LOCTN':a.loc,'TRANS QUANTITY':a.tomar,'COMMENT':ot,'SALDO':a.tomar});
+    return r;
+  });
+}
+function exportGen(){
+  if(!xlsOK()) return;
+  if(!G.val.length){ alert('Primero genera la asignación.'); return; }
+  const ot=$('g-ot').value.trim();
+  if(!ot){ alert('Escribe el N° de OT (ORDER) antes de descargar.'); $('g-ot').focus(); return; }
+  const bad=G.val.filter(v=>v.estado!=='OK');
+  if(bad.length && !confirm(`Hay ${bad.length} línea(s) sin stock completo en ${G.whTxt}. El archivo solo incluirá lo asignado.\n\n¿Descargar de todas formas?`)) return;
+  const cust=$('g-cust').value.trim()||custFromOT(ot);
+  const rows=buildOTRows(ot,cust);
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([OT_HEADERS,...rows.map(r=>OT_HEADERS.map(h=>r[h]))]);
+  ws['!cols']=OT_HEADERS.map(h=>({wch:Math.max(10,h.length+2)}));
+  XLSX.utils.book_append_sheet(wb, ws, 'DETALLE PEDIDO');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(G.val.map(v=>({'OT':ot,'Línea':v.n,'Código':v.cod,'Descripción':v.desc,'Lote cliente':v.lote,'Expira cliente':v.exp,
+    'Solicitado':v.qty,'Asignado':v.asignado,'Faltante':v.falta,'Estado':v.estado,'Observación':v.obs.join(' ')}))), 'Validación');
+  saveXls(wb, `Detalle_${ot.replace(/[^A-Za-z0-9_-]/g,'')}`);
+}
+
+$('g-run').onclick=runGen; $('g-xls').onclick=exportGen; $('g-tpl').onclick=tplCliente;
+$('g-upload').onclick=()=>$('g-file').click();
+$('g-ot').oninput=()=>{ if(!gCustDirty) $('g-cust').value=custFromOT($('g-ot').value); };
+$('g-cust').oninput=()=>{ gCustDirty=true; };
+$('g-file').onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return; if(!xlsOK()) return;
+  try{
+    const {rows}=await readFileRows(f); const {out,errs}=parseRows(rows);
+    if(!out.length) throw new Error(errs.join(' ')||'No encontré líneas con código y cantidad (UND).');
+    $('g-input').value=['CODIGO','LOTE','EXPIRA','CANTIDAD','NOMBRE'].join('\t')+'\n'+out.map(l=>[l.cod,l.lote,l.expRaw,l.qty,l.desc].join('\t')).join('\n');
+    const m=f.name.match(/OT\s*0*\d+/i);
+    if(m && !$('g-ot').value.trim()){ $('g-ot').value=m[0].toUpperCase().replace(/\s+/g,''); $('g-ot').dispatchEvent(new Event('input')); }
+    await runGen();
+  }catch(err){ gMsg('No se pudo leer el archivo: '+err.message); }
+};
+$('g-clear').onclick=()=>{ $('g-input').value=''; $('g-ot').value=''; $('g-cust').value=''; gCustDirty=false; gState.wh.clear(); gState.wh.add('LT'); msRefresh('ms-g-wh'); gMsg(''); $('g-results').style.display='none'; G={val:[],asg:[]}; };
+$('g-example').onclick=async()=>{
+  if(!(await ensureSaldo())){ gMsg('No se pudo cargar el saldo.'); return; }
+  const seen=new Set(), L=['CODIGO\tLOTE\tEXPIRA\tCANTIDAD'];
+  for(const r of SALDO){ if(r.saldo>0 && r.wh==='LT' && !seen.has(r.cK) && L.length<=4){ seen.add(r.cK); L.push([stripGY(r.cod),r.loteF||r.loteB,r.exp,Math.max(1,Math.ceil(r.saldo/2))].join('\t')); } }
+  $('g-input').value=L.join('\n'); gMsg(L.length<2?'No encontré saldo en LT para armar un ejemplo.':'');
+};
+
+/* ============ DESGLOSE: PLANTILLA Y CARGA DE OT (.xls) ============ */
+const otNormMap=new Map(OT_HEADERS.map(h=>[nk(h),h]));
+let UP={rows:[],errors:[],sent:false};
+const upMsg=(cls,t)=>`<div class="${cls}">${t}</div>`;
+async function onDFile(e){
+  const f=e.target.files[0]; e.target.value=''; if(!f) return; if(!xlsOK()) return;
+  const panel=$('d-up-panel'); panel.style.display=''; $('d-up-title').textContent='Archivo: '+f.name; $('d-up-msgs').innerHTML=upMsg('text-on-surface-variant','Leyendo archivo…'); $('d-up-prev').innerHTML='';
+  $('d-up-send').disabled=true; UP={rows:[],errors:[],sent:false};
+  try{
+    const {rows:aoa}=await readFileRows(f,'DETALLE PEDIDO');
+    let hi=-1; for(let i=0;i<Math.min(6,aoa.length);i++){ if(aoa[i].filter(c=>otNormMap.has(nk(c))).length>=4){ hi=i; break; } }
+    if(hi<0){
+      const isClient=aoa.slice(0,6).some(r=>{ const n=r.map(nk); return n.includes('CODIGO4') && n.includes('UND11'); });
+      throw new Error(isClient?'Este es el archivo del cliente. Súbelo en «Generador OT» para asignar ubicaciones; aquí se sube el Detalle de OT ya generado.':'No reconozco los encabezados. Usa la «Plantilla (.xls)» o el archivo que descarga el Generador OT.');
+    }
+    const heads=aoa[hi].map(c=>otNormMap.get(nk(c))||null);
+    const ignoradas=aoa[hi].filter((c,j)=>String(c).trim() && !heads[j]).map(String);
+    const rows=aoa.slice(hi+1).filter(r=>r.some(c=>String(c).trim()!=='')).map(r=>{ const o={}; heads.forEach((h,j)=>{ if(h && r[j]!=='' && r[j]!=null) o[h]=r[j]; }); return o; });
+    const hoy=Number(ymdToday());
+    rows.forEach(o=>{ if(o['TRANSACTION DATE']==null) o['TRANSACTION DATE']=hoy; if(o['SALDO']==null && o['TRANS QUANTITY']!=null) o['SALDO']=o['TRANS QUANTITY']; if(o['COMMENT']==null && o['ORDER']!=null) o['COMMENT']=o['ORDER']; });
+    UP.rows=rows; renderUpload(rows, ignoradas, heads);
+  }catch(err){ $('d-up-msgs').innerHTML=upMsg('text-error font-semibold','⚠️ '+esc(err.message)); }
+}
+function renderUpload(rows, ignoradas, heads){
+  const errs=[], warns=[], infos=[];
+  if(!rows.length) errs.push('El archivo no tiene filas de datos.');
+  ['ORDER','ITEM NUMBER','TRANS QUANTITY'].forEach(h=>{ if(!heads.includes(h)) errs.push(`Falta la columna obligatoria ${h}.`); });
+  const bad=[]; rows.forEach((o,i)=>{ if(!String(o['ORDER']??'').trim()||!String(o['ITEM NUMBER']??'').trim()||!(parseQty(o['TRANS QUANTITY'])>0)) bad.push(i+2); });
+  if(bad.length) errs.push(`${bad.length} fila(s) sin ORDER, ITEM NUMBER o cantidad válida (filas ${bad.slice(0,8).join(', ')}${bad.length>8?'…':''}).`);
+  const ots=[...new Set(rows.map(o=>String(o['ORDER']??'').trim()).filter(Boolean))];
+  const exist=new Map(RES.map(o=>[o.ot.toUpperCase(),o.lineas]));
+  const dup=ots.filter(o=>exist.has(o.toUpperCase()));
+  if(dup.length) errs.push(`La OT ya existe en el sheet: ${dup.map(o=>o+' ('+exist.get(o.toUpperCase())+' líneas)').join(', ')}. No se puede cargar de nuevo.`);
+  if(MODE!=='api') errs.push('La carga al sheet requiere la API (Apps Script). Ahora se está usando el CSV.');
+  const noLoc=rows.filter(o=>!String(o['LOCTN']??'').trim()).length; if(noLoc) warns.push(`${noLoc} fila(s) sin LOCTN (ubicación).`);
+  const noLT=rows.filter(o=>String(o['WHSE']??'').trim().toUpperCase()!=='LT').length; if(noLT) warns.push(`${noLT} fila(s) con WHSE distinto de LT.`);
+  if(SALDO.length){
+    const sal=new Map(); SALDO.forEach(r=>{ const k=r.cK+'|'+nk(r.loc)+'|'+r.lbN; sal.set(k,(sal.get(k)||0)+r.saldo); });
+    const use=new Map(); rows.forEach(o=>{ const k=stripGY(nk(o['ITEM NUMBER']))+'|'+nk(o['LOCTN'])+'|'+nk(o['LOT NUMBER']); use.set(k,(use.get(k)||0)+(parseQty(o['TRANS QUANTITY'])||0)); });
+    let sinS=0, exc=0; use.forEach((q,k)=>{ if(!sal.has(k)) sinS++; else if(q>sal.get(k)) exc++; });
+    if(sinS) warns.push(`${sinS} combinación(es) código/ubicación/lote no figuran en el saldo.`);
+    if(exc) warns.push(`${exc} combinación(es) piden más de lo que hay en esa ubicación.`);
+  } else infos.push('El saldo aún no se cargó; no se pudo verificar ubicaciones.');
+  if(ignoradas.length) infos.push('Columnas no reconocidas (se ignoran): '+ignoradas.map(esc).join(', ')+'.');
+  const unidades=rows.reduce((s,o)=>s+(parseQty(o['TRANS QUANTITY'])||0),0);
+  UP.errors=errs;
+  $('d-up-title').textContent=`${ots.join(', ')||'—'} · ${fmt(rows.length)} líneas · ${fmt(unidades)} uds`;
+  $('d-up-msgs').innerHTML=[...errs.map(t=>upMsg('text-error font-semibold','⛔ '+esc(t))),...warns.map(t=>upMsg('text-on-secondary-fixed','⚠️ '+esc(t))),...infos.map(t=>upMsg('text-on-surface-variant','ℹ️ '+t)),
+    (!errs.length?upMsg('text-tertiary font-semibold','✔ Listo para cargar. Se agregará al final de la hoja DETALLE PEDIDO.'):'')].join('');
+  $('d-up-prev').innerHTML=rows.slice(0,8).map(o=>`<tr><td class="px-space-md py-1 font-semibold text-primary">${esc(o['ORDER']??'')}</td><td class="px-space-md py-1 font-mono">${esc(o['ITEM NUMBER']??'')}</td><td class="px-space-md py-1"><div class="max-w-[260px] truncate">${esc(o['ITEM DESCRIPTION']??'')}</div></td><td class="px-space-md py-1 font-mono">${esc(o['LOT NUMBER']??'')}</td><td class="px-space-md py-1 font-mono">${esc(o['LOT NUMBER CUSTOMER']??'')}</td><td class="px-space-md py-1 font-mono">${esc(o['WHSE']??'')}</td><td class="px-space-md py-1 font-mono">${esc(o['LOCTN']??'')}</td><td class="px-space-md py-1 text-right font-mono font-bold">${fmt(parseQty(o['TRANS QUANTITY'])||0)}</td></tr>`).join('')
+    +(rows.length>8?`<tr><td colspan="8" class="px-space-md py-1 text-on-surface-variant">… y ${fmt(rows.length-8)} fila(s) más</td></tr>`:'');
+  $('d-up-send').disabled=errs.length>0;
+}
+async function sendUpload(){
+  if(UP.errors.length||UP.sent||!UP.rows.length) return;
+  const clave=prompt('Clave de carga (la definió el administrador del script):'); if(clave===null) return;
+  const btn=$('d-up-send'); btn.disabled=true; $('d-up-msgs').innerHTML=upMsg('text-on-surface-variant','Cargando al sheet…');
+  try{
+    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({accion:'cargar',clave:clave,filas:UP.rows})});
+    const j=await res.json(); if(!j.ok) throw new Error(j.error||'Error al cargar');
+    UP.sent=true;
+    $('d-up-msgs').innerHTML=upMsg('text-tertiary font-semibold',`✔ Se cargaron ${fmt(j.insertadas)} líneas de ${esc((j.ordenes||[]).join(', '))} al sheet`+(j.id_inicial!==''&&j.id_inicial!=null?` (ID_DETALLE ${esc(j.id_inicial)}–${esc(j.id_final)})`:'')+'.')
+      +((j.sinColumna&&j.sinColumna.length)?upMsg('text-on-surface-variant','ℹ️ Columnas que no existen en la hoja y no se escribieron: '+j.sinColumna.map(esc).join(', ')+'.'):'');
+    await loadAll();
+  }catch(err){ $('d-up-msgs').innerHTML=upMsg('text-error font-semibold','⛔ '+esc(err.message)); btn.disabled=false; }
+}
+$('d-tpl').onclick=tplOT; $('d-up').onclick=()=>$('d-file').click(); $('d-file').onchange=onDFile;
+$('d-up-send').onclick=sendUpload; $('d-up-cancel').onclick=()=>{ $('d-up-panel').style.display='none'; UP={rows:[],errors:[],sent:false}; };
+
 /* ============ MENÚ LATERAL AUTO-OCULTO ============ */
 let sbPinned=false, sbTimer=null;
 function sbSet(open){
@@ -740,13 +1269,15 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') sbSet(false); });
 
 function showView(v){
   sbSet(false);
-  const dash = v!=='hist';
-  $('view-dash').style.display = dash?'':'none'; $('page-head').style.display = dash?'':'none'; $('view-hist').style.display = dash?'none':'';
+  const map={dash:'view-dash',detalle:'view-dash',hist:'view-hist',saldo:'view-saldo',gen:'view-gen'};
+  ['view-dash','view-hist','view-saldo','view-gen'].forEach(id=>{ $(id).style.display = id===map[v] ? '' : 'none'; });
+  $('page-head').style.display = map[v]==='view-dash' ? '' : 'none';
   document.querySelectorAll('.nav-btn').forEach(b=>{
-    const on = (v==='hist'&&b.dataset.nav==='hist')||(v==='dash'&&b.dataset.nav==='dash')||(v==='detalle'&&b.dataset.nav==='detalle');
+    const on = b.dataset.nav===v;
     b.className='nav-btn w-full text-left flex items-center gap-space-sm px-space-md py-space-sm rounded-xl font-label-lg text-label-lg '+(on?'bg-primary-container text-on-primary shadow-sm':'text-on-surface-variant hover:bg-surface-container-high');
   });
   if(v==='hist') openHist();
+  if(v==='saldo' || v==='gen') openSaldo();
   if(v==='detalle') $('detalle').scrollIntoView({behavior:'smooth'}); else window.scrollTo({top:0});
 }
 document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>showView(b.dataset.nav));
