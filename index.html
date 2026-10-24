@@ -341,7 +341,9 @@
           <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-space-md" id="g-kpis"></div>
           <div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col gap-space-md">
             <div class="flex flex-wrap items-center justify-between gap-space-sm"><h3 class="font-headline-md text-headline-md">Validación por línea</h3>
-              <button id="g-xls" type="button" class="flex items-center gap-1 px-space-md py-2 rounded bg-primary-container text-on-primary hover:bg-primary font-label-lg text-label-lg shadow-sm"><span class="material-symbols-outlined text-[16px]">download</span>Descargar Detalle OT (.xls)</button></div>
+              <div class="flex flex-wrap items-center gap-space-sm">
+                <button id="g-alert-xls" type="button" style="display:none" class="flex items-center gap-1 px-space-md py-2 rounded bg-red-100 text-error hover:bg-red-200 font-label-lg text-label-lg shadow-sm"><span class="material-symbols-outlined text-[16px]">warning</span><span id="g-alert-xls-label">Descargar Alertas (.xls)</span></button>
+                <button id="g-xls" type="button" class="flex items-center gap-1 px-space-md py-2 rounded bg-primary-container text-on-primary hover:bg-primary font-label-lg text-label-lg shadow-sm"><span class="material-symbols-outlined text-[16px]">download</span>Descargar Detalle OT (.xls)</button></div></div>
             <div class="vscroll v10s rounded-xl border border-surface-container"><table class="w-full text-left border-collapse">
               <thead><tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
                 <th class="px-space-md">#</th><th class="px-space-md">Código</th><th class="px-space-md min-w-[220px]">Descripción</th><th class="px-space-md">Lote cliente</th><th class="px-space-md">Expira cliente</th>
@@ -1095,7 +1097,8 @@ async function runGen(){
   if(bad.length){
     al.className='p-space-md rounded-xl font-body-md text-body-md bg-red-100 text-error';
     al.innerHTML=`⚠️ <strong>ALERTA: no hay stock completo en ${esc(G.whTxt)}</strong> para ${bad.length} de ${G.val.length} líneas (faltan ${fmt(sol-asi)} uds). `+
-      bad.slice(0,8).map(v=>`#${v.n} ${esc(v.cod)} (falta ${fmt(v.falta)})`).join(' · ')+(bad.length>8?` · … y ${bad.length-8} más`:'');
+      bad.slice(0,8).map(v=>`#${v.n} ${esc(v.cod)} (falta ${fmt(v.falta)})`).join(' · ')+(bad.length>8?` · … y ${bad.length-8} más`:'')+
+      ` <button type="button" onclick="exportAlertas()" class="ml-2 inline-flex items-center gap-1 px-space-sm py-1 rounded bg-error text-white font-label-md text-label-md align-middle"><span class="material-symbols-outlined text-[14px]">download</span>Descargar detalle de alertas (.xls)</button>`;
   } else {
     al.className='p-space-md rounded-xl font-body-md text-body-md bg-tertiary-fixed text-tertiary';
     al.innerHTML=`✔ Todas las líneas (${G.val.length}) tienen stock en ${esc(G.whTxt)}.`;
@@ -1122,6 +1125,8 @@ async function runGen(){
     <td class="px-space-md font-mono text-on-surface-variant">${esc(a.loteB)}</td><td class="px-space-md font-mono text-on-surface-variant">${esc(a.loteF)}</td><td class="px-space-md font-mono text-on-surface-variant">${esc(fmtDate(a.exp))}</td>
     <td class="px-space-md text-right font-mono font-bold text-primary">${fmt(a.tomar)}</td><td class="px-space-md text-right font-mono">${fmt(a.saldoU)}</td><td class="px-space-md text-right font-mono text-on-surface-variant">${fmt(a.resta)}</td></tr>`).join('')
     ||'<tr><td colspan="11" class="h-16 text-center text-on-surface-variant">Ninguna línea pudo asignarse. Revisa las observaciones.</td></tr>';
+  $('g-alert-xls').style.display = bad.length ? '' : 'none';
+  $('g-alert-xls-label').textContent = `Descargar Alertas (.xls) · ${bad.length}`;
   $('g-results').style.display='';
   if($('g-results').scrollIntoView) $('g-results').scrollIntoView({behavior:'smooth',block:'start'});
 }
@@ -1154,6 +1159,23 @@ function exportGen(){
     'Solicitado':v.qty,'Asignado':v.asignado,'Faltante':v.falta,'Estado':v.estado,'Observación':v.obs.join(' ')}))), 'Validación');
   saveXls(wb, `Detalle_${ot.replace(/[^A-Za-z0-9_-]/g,'')}`);
 }
+
+/* ---- Detalle de ALERTAS (líneas sin stock completo) en .xls ---- */
+function exportAlertas(){
+  if(!xlsOK()) return;
+  if(!G || !G.val || !G.val.length){ alert('Primero genera la asignación.'); return; }
+  const bad=G.val.filter(v=>v.estado!=='OK');
+  if(!bad.length){ alert('No hay alertas: todas las líneas tienen stock completo.'); return; }
+  const ot=$('g-ot').value.trim()||'SIN_OT';
+  const H=['#','Código','Descripción','Lote cliente','Expira cliente','Solicitado','Asignado','Faltante','Estado','Observación'];
+  const rows=bad.map(v=>[v.n,v.cod,v.desc,v.lote,v.exp,v.qty,v.asignado,v.falta,v.estado,v.obs.join(' ')]);
+  const ws=XLSX.utils.aoa_to_sheet([H,...rows]);
+  ws['!cols']=[6,16,46,14,14,11,11,11,11,100].map(w=>({wch:w}));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Alertas');
+  saveXls(wb, `Alertas_${ot.replace(/[^A-Za-z0-9_-]/g,'')}`);
+}
+$('g-alert-xls').onclick=exportAlertas;
 
 $('g-run').onclick=runGen; $('g-xls').onclick=exportGen; $('g-tpl').onclick=tplCliente;
 $('g-upload').onclick=()=>$('g-file').click();
