@@ -1371,7 +1371,7 @@ function trfBuild(){
   trfSource().forEach(d=>{
     const q = TRF.qtyMode==='pend' ? d.pend : d.qty;
     if(!(q>0)){ skipped.zero++; return; }
-    const fr=String(d.wh||''); rows.push([ Number(TRF.RCCUS)||0, String(d.item||''), String(d.lote||''), q, fr, TRF.RTOWH, String(d.loc||''), TRF.RTOLC, '', String(d.ot), String(d.ot), fr===TRF.RTOWH?'02':'01' ]);
+    const fr=String(d.wh||''); rows.push([ Number(TRF.RCCUS)||0, String(d.item||''), String(d.lote||''), q, fr, TRF.RTOWH, String(d.loc||''), TRF.RTOLC, null, String(d.ot), String(d.ot), fr===TRF.RTOWH?'02':'01' ]);
   });
   return {rows,skipped};
 }
@@ -1411,7 +1411,7 @@ function trfDownload(){
   if(!TRF.RTOLC){ alert('Indica la ubicación destino (RTOLC).'); return; }
   const ws=XLSX.utils.aoa_to_sheet([TRF_HEAD,...rows]);
   ws['!cols']=TRF_HEAD.map((h,i)=>({wch:[8,18,14,8,8,8,10,10,10,10,10,8][i]}));
-  Object.keys(ws).forEach(a=>{ if(a[0]!=='!' && ws[a].t==='s') ws[a].z='@'; });
+  Object.keys(ws).forEach(a=>{ if(a[0]==='!') return; if(ws[a].t==='s' && ws[a].v==='') delete ws[a]; else if(ws[a].t==='s') ws[a].z='@'; });
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'TRFMAN');
   saveXls(wb,'TRFMAN');
 }
