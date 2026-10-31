@@ -164,6 +164,7 @@
             </div>
             <button id="t-clear" type="button" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md text-on-surface"><span class="material-symbols-outlined text-[16px]">filter_alt_off</span>Limpiar filtros</button>
             <button id="btn-xls2" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">file_download</span><span id="xls-label">Excel (.xls)</span></button>
+            <button id="btn-trf" type="button" title="Genera la plantilla TRFMAN (movimiento de stock) con las líneas filtradas o seleccionadas" class="flex items-center gap-1 px-space-sm py-1.5 rounded bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md shadow-sm"><span class="material-symbols-outlined text-[16px]">swap_horiz</span>TRFMAN<span id="trf-badge" class="hidden px-1.5 rounded-full bg-white/25 font-label-sm text-label-sm"></span></button>
           </div>
         </div>
         <div class="vscroll v10">
@@ -365,6 +366,37 @@
   </main>
 </div>
 
+
+<!-- MODAL TRFMAN -->
+<div id="trf-modal" style="display:none" class="fixed inset-0 z-[90] bg-on-surface/40 flex items-center justify-center p-space-md">
+  <div class="bg-surface-container-lowest rounded-xl shadow-lg w-full max-w-5xl max-h-[92vh] flex flex-col">
+    <div class="flex items-start justify-between gap-space-md p-space-lg pb-space-sm">
+      <div><h3 class="font-headline-md text-headline-md flex items-center gap-space-xs"><span class="material-symbols-outlined text-primary text-[22px]">swap_horiz</span>TRFMAN · Movimiento de stock</h3>
+        <p id="trf-sub" class="font-body-sm text-body-sm text-on-surface-variant"></p></div>
+      <button id="trf-close" type="button" class="p-space-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high"><span class="material-symbols-outlined text-[20px]">close</span></button>
+    </div>
+    <div class="px-space-lg pb-space-sm flex flex-wrap items-center gap-space-md">
+      <div class="flex items-center gap-space-xs font-label-sm text-label-sm text-primary uppercase font-bold"><span class="material-symbols-outlined text-[18px]">assignment</span>OT a generar:</div>
+      <div class="relative" id="ms-trf-ot"></div>
+      <label id="trf-onlysel-wrap" class="hidden items-center gap-space-xs font-label-md text-label-md text-on-surface-variant cursor-pointer"><input type="checkbox" id="trf-onlysel" checked class="w-4 h-4 accent-[#1d4ed8]"><span id="trf-onlysel-lbl"></span></label>
+    </div>
+    <div class="px-space-lg pb-space-sm grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-space-sm" id="trf-params"></div>
+    <div class="px-space-lg pb-space-sm flex flex-wrap items-center gap-space-md font-label-md text-label-md text-on-surface-variant">
+      <label class="flex items-center gap-space-xs">Cantidad a mover (RQTYT)
+        <select id="trf-qtymode" class="bg-surface-container-low rounded px-2 py-1 text-on-surface focus:outline-none cursor-pointer"><option value="qty">Solicitado (TRANS QUANTITY)</option><option value="pend">Pendiente (SALDO)</option></select></label>
+      <span id="trf-msg" class="font-body-sm text-body-sm"></span>
+    </div>
+    <div class="px-space-lg vscroll v10s mx-space-lg rounded-xl border border-surface-container" style="padding:0">
+      <table class="w-full text-left border-collapse"><thead><tr id="trf-head" class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider"></tr></thead>
+      <tbody id="trf-body" class="divide-y divide-surface-container font-body-sm text-body-sm font-mono"></tbody></table>
+    </div>
+    <div class="p-space-lg pt-space-sm flex flex-wrap items-center justify-between gap-space-sm">
+      <button id="trf-reset" type="button" class="px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md text-on-surface">Restablecer valores</button>
+      <div class="flex gap-space-sm"><button id="trf-cancel" type="button" class="px-space-sm py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high font-label-md text-label-md text-on-surface">Cerrar</button>
+        <button id="trf-dl" type="button" class="flex items-center gap-1 px-space-md py-2 rounded bg-primary-container text-on-primary hover:bg-primary font-label-lg text-label-lg shadow-sm"><span class="material-symbols-outlined text-[16px]">download</span>Descargar TRFMAN.xls</button></div>
+    </div>
+  </div>
+</div>
 <script>
 /* ============ CONFIGURACIÓN ============ */
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTWZmOGgm12KMMC7h3WNApewPJ5s83--mMAV-7K9-J3Jm2vV7TiP5j5fYuf21L7iSS6iHfiLAmL2a2G/pub?gid=829291771&single=true&output=csv";
@@ -1304,6 +1336,95 @@ function showView(v){
 }
 document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>showView(b.dataset.nav));
 showView('dash');
+
+/* ============ TRFMAN (interfaz de movimiento de stock) ============ */
+/* Asociación de cabeceras (OT → TRFMAN):
+   RCCUS=254 fijo · RBPRD=ITEM NUMBER · RBLOT=LOT NUMBER · RQTYT=TRANS QUANTITY · RFRWH=WHSE · RTOWH=LT fijo
+   RFRLC=LOCTN · RTOLC=ubicación destino (se pide en la ventana, igual para todo el detalle) · RNDOC=vacío
+   RCOM=ORDER · RTHCMT=ORDER · RRSNC = '02' si RFRWH==RTOWH, si no '01'. Todo en formato texto salvo RCCUS y RQTYT. */
+const TRF_KEY='wms_trfman2';
+const TRF_HEAD=['RCCUS','RBPRD','RBLOT','RQTYT','RFRWH','RTOWH','RFRLC','RTOLC','RNDOC','RCOM','RTHCMT','RRSNC'];
+const TRF_DEF={RCCUS:'254',RTOWH:'LT',RTOLC:'',qtyMode:'qty'};
+let TRF={...TRF_DEF};
+try{ const sv=JSON.parse(localStorage.getItem(TRF_KEY)||'{}'); TRF.qtyMode=sv.qtyMode||TRF.qtyMode; }catch(e){}
+function trfSave(){ try{ localStorage.setItem(TRF_KEY, JSON.stringify({qtyMode:TRF.qtyMode})); }catch(e){} }
+const trfOts=new Set(); let TRF_CACHE={}, trfTok=0, trfLoading=false;
+function trfSource(){
+  const onlySel=$('trf-onlysel').checked && selected.size;
+  if(onlySel) return DATA.filter(d=>selected.has(d.k) && trfOts.has(d.ot));
+  return [...trfOts].sort().flatMap(o=>TRF_CACHE[o]||[]);
+}
+async function trfLoad(){
+  const tok=++trfTok, miss=[...trfOts].filter(o=>!TRF_CACHE[o]);
+  if(miss.length){
+    trfLoading=true; trfRender();
+    try{
+      const rows=await fetchDetalle(miss,'','');
+      if(tok!==trfTok) return;
+      miss.forEach(o=>TRF_CACHE[o]=[]); rows.forEach(d=>{ (TRF_CACHE[d.ot]=TRF_CACHE[d.ot]||[]).push(d); });
+    }catch(e){ if(tok!==trfTok) return; $('trf-msg').innerHTML='<span class="text-error font-semibold">No se pudo cargar la OT: '+esc(e.message)+'</span>'; trfLoading=false; return; }
+  }
+  trfLoading=false; trfRender();
+}
+function trfBuild(){
+  const rows=[], skipped={zero:0};
+  trfSource().forEach(d=>{
+    const q = TRF.qtyMode==='pend' ? d.pend : d.qty;
+    if(!(q>0)){ skipped.zero++; return; }
+    const fr=String(d.wh||''); rows.push([ Number(TRF.RCCUS)||0, String(d.item||''), String(d.lote||''), q, fr, TRF.RTOWH, String(d.loc||''), TRF.RTOLC, '', String(d.ot), String(d.ot), fr===TRF.RTOWH?'02':'01' ]);
+  });
+  return {rows,skipped};
+}
+function trfBadge(){ const b=$('trf-badge'), n=selected.size; b.textContent=n; b.classList.toggle('hidden',!n); }
+function trfRender(){
+  const {rows,skipped}=trfBuild(), ots=[...new Set(trfSource().map(d=>d.ot))];
+  const nSelIn=DATA.filter(d=>selected.has(d.k)&&trfOts.has(d.ot)).length;
+  $('trf-onlysel-wrap').classList.toggle('hidden',!nSelIn); $('trf-onlysel-wrap').classList.toggle('flex',!!nSelIn);
+  $('trf-onlysel-lbl').textContent='Solo las '+fmt(nSelIn)+' líneas marcadas en el detalle';
+  $('trf-sub').textContent=ots.length?('OT: '+ots.join(', ')):'Elige la OT para generar el movimiento';
+  $('trf-head').innerHTML=TRF_HEAD.map(h=>`<th class="px-space-md py-space-sm">${h}</th>`).join('');
+  $('trf-body').innerHTML=rows.map(r=>`<tr class="h-9">${r.map((v,i)=>`<td class="px-space-md ${i===3?'text-right font-bold':''}">${esc(v)}</td>`).join('')}</tr>`).join('')
+    ||`<tr><td colspan="12" class="h-16 text-center text-on-surface-variant font-sans">${trfLoading?'Cargando OT…':(trfOts.size?'La OT elegida no tiene líneas con cantidad.':'Elige la OT en «OT a generar».')}</td></tr>`;
+  const miss=rows.filter(r=>!r[4]||!r[6]).length;
+  $('trf-msg').innerHTML=`<strong class="text-on-surface">${fmt(rows.length)}</strong> líneas · <strong class="text-on-surface">${fmt(rows.reduce((s,r)=>s+r[3],0))}</strong> uds`
+    +(skipped.zero?` · <span class="text-secondary">${skipped.zero} sin cantidad (omitidas)</span>`:'')
+    +(miss?` · <span class="text-error font-semibold">${miss} sin bodega/ubicación origen</span>`:'');
+  const ok=rows.length&&TRF.RTOLC&&trfOts.size&&!trfLoading; $('trf-dl').disabled=!ok; $('trf-dl').classList.toggle('opacity-50',!ok);
+  if(rows.length&&!TRF.RTOLC) $('trf-msg').innerHTML+=' · <span class="text-error font-semibold">Falta la ubicación destino (RTOLC)</span>';
+}
+function trfOpen(){
+  TRF.RTOLC='';
+  $('trf-params').innerHTML=`<label class="flex flex-col gap-1 font-label-sm text-label-sm text-primary uppercase font-bold col-span-2">RTOLC · Ubicación destino (obligatoria, igual para todo el detalle)<input data-k="RTOLC" value="" placeholder="Ej: 00P310" autocomplete="off" class="trf-in bg-surface-container-low rounded px-2 py-1.5 font-mono text-body-md text-on-surface focus:outline-none focus:bg-surface-container-lowest border border-primary"></label>
+    <label class="flex flex-col gap-1 font-label-sm text-label-sm text-on-surface-variant uppercase">RTOWH · Bodega destino<input data-k="RTOWH" value="${esc(TRF.RTOWH)}" class="trf-in bg-surface-container-low rounded px-2 py-1.5 font-mono text-body-md text-on-surface focus:outline-none"></label>
+    <label class="flex flex-col gap-1 font-label-sm text-label-sm text-on-surface-variant uppercase">RCCUS · Cliente<input data-k="RCCUS" value="${esc(TRF.RCCUS)}" class="trf-in bg-surface-container-low rounded px-2 py-1.5 font-mono text-body-md text-on-surface focus:outline-none"></label>`;
+  $('trf-qtymode').value=TRF.qtyMode;
+  TRF_CACHE={}; trfOts.clear();
+  const sOts=[...new Set(DATA.filter(d=>selected.has(d.k)).map(d=>d.ot))];
+  (sOts.length?sOts:(wState.ots.size===1?[...wState.ots]:[])).forEach(o=>trfOts.add(o));
+  $('trf-onlysel').checked=true; msRefresh('ms-trf-ot');
+  $('trf-modal').style.display='flex'; trfRender(); trfLoad(); setTimeout(()=>{ const i=document.querySelector('.trf-in[data-k=RTOLC]'); if(i) i.focus(); },50);
+}
+const trfClose=()=>{ $('trf-modal').style.display='none'; };
+function trfDownload(){
+  if(!xlsOK()) return;
+  const {rows}=trfBuild(); if(!rows.length){ alert('No hay líneas para exportar.'); return; }
+  if(!TRF.RTOLC){ alert('Indica la ubicación destino (RTOLC).'); return; }
+  const ws=XLSX.utils.aoa_to_sheet([TRF_HEAD,...rows]);
+  ws['!cols']=TRF_HEAD.map((h,i)=>({wch:[8,18,14,8,8,8,10,10,10,10,10,8][i]}));
+  Object.keys(ws).forEach(a=>{ if(a[0]!=='!' && ws[a].t==='s') ws[a].z='@'; });
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'TRFMAN');
+  saveXls(wb,'TRFMAN');
+}
+msInit('ms-trf-ot','Elegir OT',otOpts,trfOts,()=>{ trfLoad(); },true,'Limpiar',false);
+$('trf-onlysel').onchange=trfRender;
+$('btn-trf').onclick=trfOpen; $('trf-close').onclick=$('trf-cancel').onclick=trfClose; $('trf-dl').onclick=trfDownload;
+$('trf-modal').addEventListener('mousedown',e=>{ if(e.target===$('trf-modal')) trfClose(); });
+$('trf-params').addEventListener('input',e=>{ if(e.target.classList.contains('trf-in')){ TRF[e.target.dataset.k]=e.target.value.trim(); trfSave(); trfRender(); } });
+$('trf-qtymode').onchange=e=>{ TRF.qtyMode=e.target.value; trfSave(); trfRender(); };
+$('trf-reset').onclick=()=>{ TRF={...TRF_DEF}; trfSave(); trfOpen(); };
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && $('trf-modal').style.display!=='none') trfClose(); });
+/* contador de líneas seleccionadas en el botón */
+const _render0=render; render=function(){ _render0.apply(this,arguments); trfBadge(); };
 
 loadAll();
 setInterval(()=>{ if(!document.hidden) loadAll(); }, REFRESH_MS);                         // no refresca si la pestaña está oculta
